@@ -117,11 +117,18 @@ const LessonViewport = ({
           </Card>
         </div>
 
-        {/* Teacher Video */}
-        <div className="w-80 bg-gray-900 p-4 flex flex-col">
-          <div className="flex-1 bg-gray-800 rounded-lg mb-4 flex items-center justify-center relative">
+        {/* Teacher Video - Tall FaceTime Style */}
+        <div className="fixed right-4 top-24 bottom-24 w-[300px] bg-gray-900 rounded-xl shadow-lg overflow-hidden z-10 flex flex-col">
+          <div className="bg-gray-900 text-white p-3 flex justify-between items-center">
+            <span className="text-sm font-medium">{teacherName}</span>
+            <span className="text-xs bg-green-500 px-2 py-0.5 rounded-full">
+              Active
+            </span>
+          </div>
+
+          <div className="flex-grow bg-gray-800 flex items-center justify-center relative">
             {videoEnabled ? (
-              <div className="w-full h-full overflow-hidden rounded-lg">
+              <div className="w-full h-full overflow-hidden">
                 <img
                   src={teacherAvatar}
                   alt={teacherName}
@@ -130,44 +137,50 @@ const LessonViewport = ({
               </div>
             ) : (
               <div className="text-white text-center">
-                <Avatar className="h-24 w-24 mx-auto mb-2">
-                  <AvatarFallback className="bg-purple-700 text-2xl">
+                <Avatar className="h-32 w-32 mx-auto mb-2 border-4 border-pink-500">
+                  <AvatarFallback className="bg-purple-700 text-3xl">
                     {teacherName
                       .split(" ")
                       .map((n) => n[0])
                       .join("")}
                   </AvatarFallback>
                 </Avatar>
-                <p>{teacherName}</p>
-                <p className="text-gray-400 text-sm">Camera Off</p>
+                <p className="text-lg">{teacherName}</p>
+                <p className="text-gray-400">Camera Off</p>
               </div>
             )}
           </div>
-          <div className="flex justify-center gap-4">
+
+          <div className="bg-gray-900 p-4 flex justify-center space-x-4">
             <Button
               variant="outline"
               size="icon"
-              className={`rounded-full ${micEnabled ? "bg-blue-600 text-white hover:bg-blue-700" : "bg-gray-700 text-gray-300 hover:bg-gray-600"}`}
+              className={`rounded-full h-12 w-12 ${micEnabled ? "bg-blue-600 text-white hover:bg-blue-700" : "bg-gray-700 text-gray-300 hover:bg-gray-600"}`}
               onClick={() => setMicEnabled(!micEnabled)}
             >
               {micEnabled ? (
-                <Mic className="h-4 w-4" />
+                <Mic className="h-5 w-5" />
               ) : (
-                <MicOff className="h-4 w-4" />
+                <MicOff className="h-5 w-5" />
               )}
             </Button>
             <Button
               variant="outline"
               size="icon"
-              className={`rounded-full ${videoEnabled ? "bg-blue-600 text-white hover:bg-blue-700" : "bg-gray-700 text-gray-300 hover:bg-gray-600"}`}
+              className={`rounded-full h-12 w-12 ${videoEnabled ? "bg-blue-600 text-white hover:bg-blue-700" : "bg-gray-700 text-gray-300 hover:bg-gray-600"}`}
               onClick={() => setVideoEnabled(!videoEnabled)}
             >
               {videoEnabled ? (
-                <Video className="h-4 w-4" />
+                <Video className="h-5 w-5" />
               ) : (
-                <VideoOff className="h-4 w-4" />
+                <VideoOff className="h-5 w-5" />
               )}
             </Button>
+          </div>
+
+          <div className="absolute bottom-20 left-1/2 transform -translate-x-1/2 bg-black/30 backdrop-blur-sm px-4 py-1 rounded-full flex items-center space-x-2">
+            <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+            <span className="text-xs text-white font-medium">AI Teacher</span>
           </div>
         </div>
       </div>

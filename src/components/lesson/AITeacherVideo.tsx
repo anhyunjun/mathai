@@ -72,121 +72,83 @@ const AITeacherVideo = ({
     }
   }, [videoSrc]);
 
+  // FaceTime-style container classes with fixed dimensions and aspect ratio
   const containerClasses = isMinimized
-    ? "fixed bottom-4 right-4 w-64 h-48 bg-background rounded-lg shadow-lg z-50"
-    : "w-full h-full max-w-[320px] max-h-[240px] bg-background rounded-lg shadow-lg";
+    ? "fixed bottom-4 right-4 w-[300px] h-[500px] bg-[#111827] rounded-2xl shadow-xl z-50 overflow-hidden"
+    : "w-[300px] h-[500px] bg-[#111827] rounded-2xl shadow-xl overflow-hidden";
 
   return (
-    <div className={`${containerClasses} overflow-hidden`}>
-      {/* Video Container */}
-      <div className="relative w-full h-full bg-slate-800">
-        {videoEnabled ? (
-          <video
-            ref={videoRef}
-            className="w-full h-full object-cover"
-            autoPlay
-            muted={localMuted}
-            loop
-            src={videoSrc}
-          />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center bg-slate-800">
-            <img
-              src={avatarSrc}
-              alt={teacherName}
-              className="w-24 h-24 rounded-full"
-            />
-          </div>
-        )}
-
-        {/* Teacher Name */}
-        <div className="absolute top-2 left-2 bg-black/50 text-white px-2 py-1 rounded text-sm">
-          {teacherName}
+    <div className={containerClasses}>
+      {/* Video Container - FaceTime Style */}
+      <div className="relative w-full h-full bg-[#111827] flex flex-col">
+        {/* Top status bar */}
+        <div className="bg-[#111827] text-white p-3 flex justify-between items-center">
+          <span className="text-sm font-medium">{teacherName}</span>
+          <span className="text-xs bg-green-500 px-2 py-0.5 rounded-full">
+            Active
+          </span>
         </div>
 
-        {/* Controls Overlay */}
-        <div className="absolute bottom-0 left-0 right-0 p-2 bg-gradient-to-t from-black/70 to-transparent flex justify-between items-center">
-          <div className="flex space-x-1">
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-7 w-7 text-white hover:bg-white/20"
-                    onClick={() => setMicEnabled(!micEnabled)}
-                  >
-                    {micEnabled ? <Mic size={16} /> : <MicOff size={16} />}
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>{micEnabled ? "Mute microphone" : "Unmute microphone"}</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
+        {/* Main video area - with pirate emoji style avatar like in the image */}
+        <div className="flex-grow flex items-center justify-center bg-[#1F2937] relative">
+          {videoEnabled ? (
+            <video
+              ref={videoRef}
+              className="w-[300px] h-[400px] object-cover"
+              autoPlay
+              muted={localMuted}
+              loop
+              src={videoSrc}
+            />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center bg-[#1F2937]">
+              <div className="w-64 h-64 rounded-full bg-yellow-400 border-4 border-pink-500 relative flex items-center justify-center">
+                {/* Pirate eye patch */}
+                <div className="absolute w-32 h-10 bg-gray-900 rotate-[30deg] top-16 left-4"></div>
+                <div className="absolute w-10 h-10 rounded-full bg-gray-900 top-12 left-12"></div>
+                {/* Eye */}
+                <div className="absolute w-8 h-8 rounded-full bg-gray-900 top-20 right-20"></div>
+                {/* Mouth */}
+                <div className="absolute w-20 h-10 rounded-t-full bg-gray-900 bottom-16 left-1/2 transform -translate-x-1/2 rotate-180"></div>
+              </div>
+            </div>
+          )}
+        </div>
 
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-7 w-7 text-white hover:bg-white/20"
-                    onClick={() => setVideoEnabled(!videoEnabled)}
-                  >
-                    {videoEnabled ? (
-                      <Video size={16} />
-                    ) : (
-                      <VideoOff size={16} />
-                    )}
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>{videoEnabled ? "Turn off video" : "Turn on video"}</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
+        {/* Bottom control bar */}
+        <div className="bg-[#111827] p-4 flex justify-center space-x-4">
+          <Button
+            variant="ghost"
+            size="icon"
+            className={`rounded-full h-12 w-12 ${micEnabled ? "bg-blue-600 text-white" : "bg-gray-700 text-white"}`}
+            onClick={() => setMicEnabled(!micEnabled)}
+          >
+            {micEnabled ? <Mic size={20} /> : <MicOff size={20} />}
+          </Button>
 
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-7 w-7 text-white hover:bg-white/20"
-                    onClick={() => setLocalMuted(!localMuted)}
-                  >
-                    {localMuted ? <VolumeX size={16} /> : <Volume2 size={16} />}
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>{localMuted ? "Unmute audio" : "Mute audio"}</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          </div>
+          <Button
+            variant="ghost"
+            size="icon"
+            className={`rounded-full h-12 w-12 ${videoEnabled ? "bg-blue-600 text-white" : "bg-gray-700 text-white"}`}
+            onClick={() => setVideoEnabled(!videoEnabled)}
+          >
+            {videoEnabled ? <Video size={20} /> : <VideoOff size={20} />}
+          </Button>
 
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-7 w-7 text-white hover:bg-white/20"
-                  onClick={onToggleMinimize}
-                >
-                  {isMinimized ? (
-                    <Maximize2 size={16} />
-                  ) : (
-                    <Minimize2 size={16} />
-                  )}
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>{isMinimized ? "Maximize" : "Minimize"}</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="rounded-full h-12 w-12 bg-red-600 text-white hover:bg-red-700"
+            onClick={onToggleMinimize}
+          >
+            {isMinimized ? <Maximize2 size={20} /> : <Minimize2 size={20} />}
+          </Button>
+        </div>
+
+        {/* Bottom pill */}
+        <div className="absolute bottom-20 left-1/2 transform -translate-x-1/2 bg-black/30 backdrop-blur-sm px-4 py-1 rounded-full flex items-center space-x-2">
+          <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+          <span className="text-xs text-white font-medium">AI Teacher</span>
         </div>
       </div>
     </div>

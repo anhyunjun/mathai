@@ -209,13 +209,16 @@ const LessonContainer: React.FC<LessonContainerProps> = ({
               </div>
 
               {!isVideoMinimized && (
-                <div className="w-80 p-4 border-l">
-                  <AITeacherVideo
-                    teacherName={teacherName}
-                    isMinimized={false}
-                    onToggleMinimize={() => setIsVideoMinimized(true)}
-                    isMuted={isMuted}
-                  />
+                <div className="w-[300px] min-w-[300px] h-full border-l flex items-center justify-center">
+                  <div className="flex items-center justify-center">
+                    <AITeacherVideo
+                      teacherName={teacherName}
+                      isMinimized={false}
+                      onToggleMinimize={() => setIsVideoMinimized(true)}
+                      isMuted={isMuted}
+                      avatarSrc="https://api.dicebear.com/7.x/avataaars/svg?seed=mathkong&accessories=eyepatch"
+                    />
+                  </div>
                 </div>
               )}
             </TabsContent>
