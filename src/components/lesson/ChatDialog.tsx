@@ -66,10 +66,10 @@ const ChatDialog: React.FC<ChatDialogProps> = ({
                 <div
                   className={`max-w-[80%] rounded-lg p-3 ${
                     msg.sender === "You"
-                      ? "bg-primary text-primary-foreground"
+                      ? "bg-primary text-primary-foreground shadow-soft"
                       : msg.isProactive
-                        ? "bg-blue-100 border border-blue-200"
-                        : "bg-muted"
+                        ? "bg-secondary-100 border border-secondary-200 shadow-soft"
+                        : "bg-muted shadow-soft"
                   }`}
                 >
                   <div className="flex items-center gap-2">
@@ -84,7 +84,7 @@ const ChatDialog: React.FC<ChatDialogProps> = ({
                     )}
                     <div className="font-semibold text-sm">{msg.sender}</div>
                     {msg.isProactive && (
-                      <span className="text-xs bg-blue-200 text-blue-800 px-2 py-0.5 rounded-full">
+                      <span className="text-xs bg-secondary-200 text-secondary-800 px-2 py-0.5 rounded-full font-medium">
                         Proactive
                       </span>
                     )}
@@ -103,7 +103,7 @@ const ChatDialog: React.FC<ChatDialogProps> = ({
               value={chatMessage}
               onChange={(e) => setChatMessage(e.target.value)}
               placeholder="Ask a question..."
-              className="flex-grow px-4 py-2 rounded-md border focus:outline-none focus:ring-2 focus:ring-primary"
+              className="flex-grow px-4 py-2 rounded-md border input-focus transition-all duration-200"
               onKeyDown={(e) => e.key === "Enter" && handleSendMessage()}
             />
             <Button onClick={handleSendMessage}>Send</Button>

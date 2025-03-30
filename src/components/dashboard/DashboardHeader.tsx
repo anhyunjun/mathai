@@ -80,37 +80,45 @@ const DashboardHeader = ({
   };
 
   const header = (
-    <header className="bg-white border-b border-gray-200 h-20 px-6 flex items-center justify-between w-full sticky top-0 z-10 shadow-sm">
-      <div className="flex items-center gap-2">
+    <header className="bg-background border-b border-border h-20 px-6 flex items-center justify-between w-full sticky top-0 z-10 shadow-soft">
+      <div className="flex items-center gap-3">
         <Button variant="ghost" size="icon" className="md:hidden">
           <Menu className="h-5 w-5" />
         </Button>
-        <Link to="/" className="flex items-center gap-2">
-          <div className="bg-purple-600 text-white p-2 rounded-md">
+        <Link
+          to="/"
+          className="flex items-center gap-3 transition-transform hover:scale-105"
+        >
+          <div className="bg-primary text-primary-foreground p-2.5 rounded-lg">
             <BookOpen className="h-5 w-5" />
           </div>
-          <span className="font-bold text-xl text-purple-600">Mathkong</span>
+          <span className="font-display font-bold text-xl text-primary">
+            Mathkong
+          </span>
         </Link>
       </div>
 
       <div className="hidden md:flex items-center gap-8">
         <Link
           to="/lesson"
-          className="text-gray-600 hover:text-purple-600 font-medium"
+          className="text-foreground hover:text-primary font-medium transition-colors relative group"
         >
           My Lessons
+          <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-primary transition-all duration-300 group-hover:w-full"></span>
         </Link>
         <Link
           to="/practice"
-          className="text-gray-600 hover:text-purple-600 font-medium"
+          className="text-foreground hover:text-primary font-medium transition-colors relative group"
         >
           Practice
+          <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-primary transition-all duration-300 group-hover:w-full"></span>
         </Link>
         <Link
           to="/achievements"
-          className="text-gray-600 hover:text-purple-600 font-medium"
+          className="text-foreground hover:text-primary font-medium transition-colors relative group"
         >
           Achievements
+          <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-primary transition-all duration-300 group-hover:w-full"></span>
         </Link>
       </div>
 
@@ -122,20 +130,20 @@ const DashboardHeader = ({
                 variant="ghost"
                 size="icon"
                 className={cn(
-                  "relative",
-                  gitHubVerified ? "text-green-600" : "text-gray-600",
+                  "relative hover:bg-primary-50 transition-colors",
+                  gitHubVerified ? "text-success" : "text-muted-foreground",
                 )}
                 onClick={handleGitHubClick}
               >
                 <Github className="h-5 w-5" />
                 {gitHubVerified && (
-                  <span className="absolute -top-1 -right-1 bg-green-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">
+                  <span className="absolute -top-1 -right-1 bg-success text-success-foreground text-xs rounded-full h-4 w-4 flex items-center justify-center animate-pulse-gentle">
                     ✓
                   </span>
                 )}
               </Button>
             </TooltipTrigger>
-            <TooltipContent>
+            <TooltipContent className="bg-popover text-popover-foreground shadow-medium">
               <p>
                 {gitHubVerified
                   ? "GitHub Connected"
@@ -150,18 +158,18 @@ const DashboardHeader = ({
               <Button
                 variant="ghost"
                 size="icon"
-                className="relative"
+                className="relative hover:bg-primary-50 transition-colors"
                 onClick={handleNotificationClick}
               >
-                <Bell className="h-5 w-5 text-gray-600" />
+                <Bell className="h-5 w-5 text-muted-foreground" />
                 {notificationCount > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                  <span className="absolute -top-1 -right-1 bg-error text-error-foreground text-xs rounded-full h-5 w-5 flex items-center justify-center animate-pulse-gentle">
                     {notificationCount}
                   </span>
                 )}
               </Button>
             </TooltipTrigger>
-            <TooltipContent>
+            <TooltipContent className="bg-popover text-popover-foreground shadow-medium">
               <p>Notifications</p>
             </TooltipContent>
           </Tooltip>
@@ -170,11 +178,15 @@ const DashboardHeader = ({
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button variant="ghost" size="icon">
-                <HelpCircle className="h-5 w-5 text-gray-600" />
+              <Button
+                variant="ghost"
+                size="icon"
+                className="hover:bg-primary-50 transition-colors"
+              >
+                <HelpCircle className="h-5 w-5 text-muted-foreground" />
               </Button>
             </TooltipTrigger>
-            <TooltipContent>
+            <TooltipContent className="bg-popover text-popover-foreground shadow-medium">
               <p>Help & Support</p>
             </TooltipContent>
           </Tooltip>
@@ -182,10 +194,13 @@ const DashboardHeader = ({
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="flex items-center gap-2 px-2">
-              <Avatar className="h-8 w-8">
+            <Button
+              variant="ghost"
+              className="flex items-center gap-2 px-2 hover:bg-primary-50 transition-colors"
+            >
+              <Avatar className="h-8 w-8 border-2 border-primary-100">
                 <AvatarImage src={avatarUrl} alt={studentName} />
-                <AvatarFallback className="bg-purple-100 text-purple-600">
+                <AvatarFallback className="bg-primary-100 text-primary-700">
                   {studentName
                     .split(" ")
                     .map((n) => n[0])
@@ -197,18 +212,31 @@ const DashboardHeader = ({
               </span>
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuLabel>My Account</DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={handleProfileClick}>
+          <DropdownMenuContent
+            align="end"
+            className="bg-popover text-popover-foreground shadow-medium border border-border rounded-lg w-56"
+          >
+            <DropdownMenuLabel className="text-muted-foreground">
+              My Account
+            </DropdownMenuLabel>
+            <DropdownMenuSeparator className="bg-border" />
+            <DropdownMenuItem
+              onClick={handleProfileClick}
+              className="hover:bg-primary-50 hover:text-primary cursor-pointer transition-colors"
+            >
               <User className="mr-2 h-4 w-4" />
               <span>Profile</span>
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={handleSettingsClick}>
+            <DropdownMenuItem
+              onClick={handleSettingsClick}
+              className="hover:bg-primary-50 hover:text-primary cursor-pointer transition-colors"
+            >
               Settings
             </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem>Log out</DropdownMenuItem>
+            <DropdownMenuSeparator className="bg-border" />
+            <DropdownMenuItem className="hover:bg-error-50 hover:text-error cursor-pointer transition-colors">
+              Log out
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
@@ -220,10 +248,12 @@ const DashboardHeader = ({
       {header}
 
       <Dialog open={showGitHubDialog} onOpenChange={setShowGitHubDialog}>
-        <DialogContent>
+        <DialogContent className="bg-background border border-border shadow-medium rounded-lg max-w-md">
           <DialogHeader>
-            <DialogTitle>GitHub Integration</DialogTitle>
-            <DialogDescription>
+            <DialogTitle className="text-xl font-display text-foreground">
+              GitHub Integration
+            </DialogTitle>
+            <DialogDescription className="text-muted-foreground">
               {gitHubVerified
                 ? "Your GitHub integration is verified. You can now collaborate on the project."
                 : "Verify your GitHub integration to enable collaboration features."}
@@ -233,25 +263,31 @@ const DashboardHeader = ({
           <div className="space-y-4 py-4">
             {gitHubVerified ? (
               <div className="flex flex-col gap-4">
-                <p className="text-sm text-green-600 font-medium">
+                <p className="text-sm text-success font-medium">
                   ✓ GitHub integration verified
                 </p>
-                <Button onClick={openGitHubRepo} className="w-full">
+                <Button
+                  onClick={openGitHubRepo}
+                  className="w-full bg-primary hover:bg-primary-600 text-primary-foreground transition-colors"
+                >
                   <Github className="mr-2 h-4 w-4" />
                   Open Repository
                 </Button>
               </div>
             ) : (
               <div className="flex flex-col gap-4">
-                <p className="text-sm">
+                <p className="text-sm text-muted-foreground">
                   Follow these steps to verify your GitHub integration:
                 </p>
-                <ol className="list-decimal list-inside space-y-2 text-sm">
+                <ol className="list-decimal list-inside space-y-2 text-sm text-foreground">
                   <li>Create a GitHub repository (if you haven't already)</li>
                   <li>Connect Tempo to your repository using the Git tab</li>
                   <li>Push your changes to GitHub</li>
                 </ol>
-                <Button onClick={verifyGitHubIntegration} className="w-full">
+                <Button
+                  onClick={verifyGitHubIntegration}
+                  className="w-full bg-primary hover:bg-primary-600 text-primary-foreground transition-colors"
+                >
                   Verify Integration
                 </Button>
               </div>

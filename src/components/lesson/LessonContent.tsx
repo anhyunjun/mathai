@@ -1,4 +1,5 @@
 import React from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import {
   ChevronRight,
@@ -25,6 +26,59 @@ interface LessonContentProps {
   lessonType?: "algebra" | "geometry" | "calculus" | "statistics";
 }
 
+// Helper function to track cursor position and student focus
+const useCursorTracking = () => {
+  const [cursorPosition, setCursorPosition] = useState({ x: 0, y: 0 });
+  const [focusArea, setFocusArea] = useState<string | null>(null);
+  const [timeOnSection, setTimeOnSection] = useState<Record<string, number>>(
+    {},
+  );
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      setCursorPosition({ x: e.clientX, y: e.clientY });
+
+      // Determine what section the cursor is hovering over
+      const element = document.elementFromPoint(e.clientX, e.clientY);
+      if (element) {
+        // Find closest parent with a data-section attribute or heading
+        let section = element.closest("[data-section]");
+        if (!section) {
+          const heading = element.closest("h1, h2, h3, h4, h5, h6");
+          if (heading) section = heading;
+        }
+
+        if (section && section.textContent) {
+          const sectionName =
+            section.getAttribute("data-section") ||
+            section.textContent.trim().substring(0, 20);
+          if (sectionName !== focusArea) {
+            setFocusArea(sectionName);
+          }
+        }
+      }
+    };
+
+    // Track time spent on each section
+    const trackingInterval = setInterval(() => {
+      if (focusArea) {
+        setTimeOnSection((prev) => ({
+          ...prev,
+          [focusArea]: (prev[focusArea] || 0) + 1,
+        }));
+      }
+    }, 1000);
+
+    document.addEventListener("mousemove", handleMouseMove);
+    return () => {
+      document.removeEventListener("mousemove", handleMouseMove);
+      clearInterval(trackingInterval);
+    };
+  }, [focusArea]);
+
+  return { cursorPosition, focusArea, timeOnSection };
+};
+
 const LessonContent: React.FC<LessonContentProps> = ({
   title = "Introduction to Quadratic Equations",
   description = "Learn how to solve quadratic equations using different methods",
@@ -35,6 +89,45 @@ const LessonContent: React.FC<LessonContentProps> = ({
   onPrevSlide = () => {},
   lessonType = "algebra",
 }) => {
+  // Track cursor position and focus areas
+  const { focusArea, timeOnSection } = useCursorTracking();
+  const [showContextualHelp, setShowContextualHelp] = useState(false);
+  const [contextualHelpText, setContextualHelpText] = useState("");
+
+  // Provide contextual help based on where student is focusing
+  useEffect(() => {
+    if (focusArea) {
+      // If student spends more than 10 seconds on a section, offer contextual help
+      const timeSpent = timeOnSection[focusArea] || 0;
+      if (timeSpent > 10 && !showContextualHelp) {
+        // Different help text based on the section they're focusing on
+        let helpText = "";
+        if (focusArea.includes("Quadratic Formula")) {
+          helpText =
+            "The quadratic formula helps us solve any quadratic equation. Remember that a, b, and c come from the standard form ax² + bx + c = 0.";
+        } else if (focusArea.includes("Example")) {
+          helpText =
+            "When working through examples, try to solve them yourself before looking at the solution steps.";
+        } else if (focusArea.includes("Problem")) {
+          helpText =
+            "Take your time with this problem. Remember to identify what the question is asking for.";
+        } else {
+          helpText =
+            "I notice you're spending time on this section. Do you have any questions about it?";
+        }
+
+        setContextualHelpText(helpText);
+        setShowContextualHelp(true);
+
+        // Hide the help after some time
+        const timer = setTimeout(() => {
+          setShowContextualHelp(false);
+        }, 8000);
+
+        return () => clearTimeout(timer);
+      }
+    }
+  }, [focusArea, timeOnSection, showContextualHelp]);
   // Placeholder content for different tabs
   const lessonContent = (
     <div className="space-y-4">
@@ -43,6 +136,7 @@ const LessonContent: React.FC<LessonContentProps> = ({
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
         className="mb-6"
+        data-section="Quadratic Formula Introduction"
       >
         <h3 className="text-xl font-semibold mb-2">Quadratic Formula</h3>
         <p className="text-gray-700 dark:text-gray-300">
@@ -58,7 +152,10 @@ const LessonContent: React.FC<LessonContentProps> = ({
           This formula gives us the two possible values of x that make the
           equation true. Let's look at an example:
         </p>
-        <div className="mt-4 p-4 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
+        <div
+          className="mt-4 p-4 bg-gray-50 dark:bg-gray-800/50 rounded-lg"
+          data-section="Example Problem"
+        >
           <p className="font-medium">Example: Solve 2x² - 5x - 3 = 0</p>
           <ul className="list-disc list-inside mt-2 space-y-2">
             <li>Here, a = 2, b = -5, c = -3</li>
@@ -161,7 +258,40 @@ const LessonContent: React.FC<LessonContentProps> = ({
   );
 
   return (
-    <div className="w-full h-full bg-white dark:bg-gray-900 rounded-xl shadow-lg overflow-hidden flex flex-col">
+    <div className="w-full h-full bg-white dark:bg-gray-900 rounded-xl shadow-lg overflow-hidden flex flex-col relative">
+      {/* Contextual help tooltip */}
+      {showContextualHelp && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -20 }}
+          className="absolute top-20 right-4 bg-blue-50 border-l-4 border-blue-500 p-3 rounded-md shadow-md max-w-xs z-10"
+        >
+          <div className="flex items-start">
+            <div className="flex-shrink-0 mr-2">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                className="text-blue-500"
+              >
+                <circle cx="12" cy="12" r="10"></circle>
+                <path d="M12 16v-4"></path>
+                <path d="M12 8h.01"></path>
+              </svg>
+            </div>
+            <div>
+              <p className="text-sm text-blue-800">{contextualHelpText}</p>
+            </div>
+          </div>
+        </motion.div>
+      )}
       {/* Header with title and navigation */}
       <div className="bg-blue-600 dark:bg-blue-700 p-4 text-white">
         <div className="flex justify-between items-center">

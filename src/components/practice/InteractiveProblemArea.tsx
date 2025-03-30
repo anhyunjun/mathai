@@ -88,6 +88,10 @@ const InteractiveProblemArea: React.FC<InteractiveProblemAreaProps> = ({
   >("correct");
   const [aiPrompt, setAiPrompt] = useState<string | null>(null);
   const [showAiPrompt, setShowAiPrompt] = useState(false);
+  const [studentState, setStudentState] = useState<
+    "idle" | "typing" | "thinking" | "stuck"
+  >("idle");
+  const [lastActivityTime, setLastActivityTime] = useState<number>(Date.now());
   const [streakCount, setStreakCount] = useState(0);
   const [lastAnswerTime, setLastAnswerTime] = useState<number | null>(null);
 
@@ -110,28 +114,93 @@ const InteractiveProblemArea: React.FC<InteractiveProblemAreaProps> = ({
       "Try breaking this down into smaller steps.",
       "Look for patterns in the problem that might help you.",
     ],
+    stuck: [
+      "I notice you've been on this step for a while. The key insight here is to factor the expression first.",
+      "You seem to be stuck. Remember that we can use the quadratic formula when we can't easily factor.",
+      "Let me give you a hint: try substituting the values into the equation first.",
+    ],
+    specific: [
+      "I see you're using the wrong formula for this type of problem. Let's review the correct approach.",
+      "Great job setting up the equation! Now remember to isolate the variable on one side.",
+      "You're on the right track, but don't forget to check both possible solutions for this quadratic.",
+    ],
+    personalized: [
+      "Last time we worked on a similar problem, you found success by drawing a diagram first. That might help here too!",
+      "You've been making excellent progress with factoring. Let's apply that strength to this problem.",
+      "I remember you mentioned finding word problems challenging. Let's break this down step by step together.",
+    ],
   };
 
-  // Show random AI prompts during problem solving
+  // Track student state based on activity
   useEffect(() => {
-    if (feedback === null && userAnswer.length === 0) {
+    const activityTimer = setInterval(() => {
+      const currentTime = Date.now();
+      const timeSinceLastActivity = currentTime - lastActivityTime;
+
+      // If no activity for 15 seconds, consider student might be stuck
+      if (
+        timeSinceLastActivity > 15000 &&
+        feedback === null &&
+        studentState !== "stuck"
+      ) {
+        setStudentState("stuck");
+      }
+      // If no activity for 5 seconds but less than 15, they might be thinking
+      else if (
+        timeSinceLastActivity > 5000 &&
+        timeSinceLastActivity <= 15000 &&
+        studentState !== "thinking"
+      ) {
+        setStudentState("thinking");
+      }
+    }, 1000);
+
+    return () => clearInterval(activityTimer);
+  }, [lastActivityTime, feedback, studentState]);
+
+  // Show contextual AI prompts based on student state
+  useEffect(() => {
+    if (feedback === null) {
+      let promptCategory: keyof typeof aiPrompts;
+      let promptDelay = 0;
+
+      if (studentState === "stuck") {
+        promptCategory = "stuck";
+        promptDelay = 1000; // Show stuck prompts quickly
+      } else if (studentState === "thinking") {
+        promptCategory = "hint";
+        promptDelay = 3000; // Give them a bit more time if just thinking
+      } else if (workingArea.length > 0 && userAnswer.length === 0) {
+        // They're working but haven't submitted an answer
+        promptCategory = "specific";
+        promptDelay = 5000;
+      } else {
+        // Default encouragement
+        promptCategory = "encouragement";
+        promptDelay = 8000;
+      }
+
+      // Occasionally show personalized prompts
+      if (Math.random() < 0.3) {
+        promptCategory = "personalized";
+      }
+
       const promptTimer = setTimeout(() => {
-        const category = Math.random() > 0.5 ? "thinking" : "encouragement";
         const randomIndex = Math.floor(
-          Math.random() * aiPrompts[category].length,
+          Math.random() * aiPrompts[promptCategory].length,
         );
-        setAiPrompt(aiPrompts[category][randomIndex]);
+        setAiPrompt(aiPrompts[promptCategory][randomIndex]);
         setShowAiPrompt(true);
 
         // Hide the prompt after some time
         setTimeout(() => {
           setShowAiPrompt(false);
-        }, 5000);
-      }, 8000); // Show prompt after 8 seconds of inactivity
+        }, 6000);
+      }, promptDelay);
 
       return () => clearTimeout(promptTimer);
     }
-  }, [currentProblemIndex, feedback, userAnswer]);
+  }, [currentProblemIndex, feedback, userAnswer, studentState, workingArea]);
 
   const checkAnswer = () => {
     const currentTime = Date.now();
@@ -225,7 +294,9 @@ const InteractiveProblemArea: React.FC<InteractiveProblemAreaProps> = ({
             initial={{ opacity: 0, y: 20, scale: 0.8 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, scale: 0.8, y: 10 }}
-            className="absolute top-4 right-4 bg-blue-100 border border-blue-200 p-3 rounded-lg max-w-xs z-10 shadow-md"
+            className="absolute top-4 right-4 bg-secondary-100 border-l-4 border-blue-500 p-3 rounded-lg max-w-xs z-10 shadow-medium"
+            whileHover={{ scale: 1.05 }}
+            transition={{ type: "spring", stiffness: 400, damping: 10 }}
           >
             <div className="flex items-start gap-2">
               <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0 border-2 border-blue-300">
@@ -236,8 +307,10 @@ const InteractiveProblemArea: React.FC<InteractiveProblemAreaProps> = ({
                 />
               </div>
               <div>
-                <p className="text-sm font-medium text-blue-800">Ms. Kong</p>
-                <p className="text-sm text-blue-700">{aiPrompt}</p>
+                <p className="text-sm font-medium text-secondary-800">
+                  Ms. Kong
+                </p>
+                <p className="text-sm text-secondary-700">{aiPrompt}</p>
               </div>
             </div>
           </motion.div>
@@ -253,7 +326,7 @@ const InteractiveProblemArea: React.FC<InteractiveProblemAreaProps> = ({
             exit={{ opacity: 0, scale: 1.5 }}
             className="fixed inset-0 flex items-center justify-center z-50 pointer-events-none"
           >
-            <div className="bg-gradient-to-r from-yellow-400 via-yellow-500 to-yellow-600 p-6 rounded-xl shadow-lg text-center text-white relative overflow-hidden">
+            <div className="bg-gradient-to-r from-warning-400 via-warning-500 to-warning-600 p-6 rounded-xl shadow-hard text-center text-white relative overflow-hidden">
               <motion.div
                 className="absolute inset-0 opacity-20"
                 animate={{
@@ -316,7 +389,7 @@ const InteractiveProblemArea: React.FC<InteractiveProblemAreaProps> = ({
           </h2>
         </div>
         <div className="text-sm text-gray-600 flex items-center">
-          <div className="mr-3 bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs font-medium flex items-center">
+          <div className="mr-3 bg-secondary-100 text-secondary-800 px-2 py-1 rounded-full text-xs font-medium flex items-center">
             <Award className="h-3 w-3 mr-1" />
             Streak: {streakCount}
           </div>
@@ -353,7 +426,15 @@ const InteractiveProblemArea: React.FC<InteractiveProblemAreaProps> = ({
             <Input
               id="answer"
               value={userAnswer}
-              onChange={(e) => setUserAnswer(e.target.value)}
+              onChange={(e) => {
+                setUserAnswer(e.target.value);
+                setLastActivityTime(Date.now());
+                setStudentState("typing");
+              }}
+              onFocus={() => {
+                setLastActivityTime(Date.now());
+                setStudentState("typing");
+              }}
               placeholder="Enter your answer here"
               className="w-full"
               disabled={feedback !== null}
@@ -371,7 +452,15 @@ const InteractiveProblemArea: React.FC<InteractiveProblemAreaProps> = ({
             <Textarea
               id="workingArea"
               value={workingArea}
-              onChange={(e) => setWorkingArea(e.target.value)}
+              onChange={(e) => {
+                setWorkingArea(e.target.value);
+                setLastActivityTime(Date.now());
+                setStudentState("typing");
+              }}
+              onFocus={() => {
+                setLastActivityTime(Date.now());
+                setStudentState("typing");
+              }}
               placeholder="Show your work here..."
               className="w-full h-32"
             />
@@ -381,15 +470,15 @@ const InteractiveProblemArea: React.FC<InteractiveProblemAreaProps> = ({
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              className="p-3 bg-amber-50 border border-amber-200 rounded-md"
+              className="p-3 bg-warning-50 border border-warning-200 rounded-md shadow-soft"
             >
               <div className="flex items-start">
-                <Lightbulb className="h-5 w-5 text-amber-500 mr-2 mt-0.5" />
+                <Lightbulb className="h-5 w-5 text-warning-500 mr-2 mt-0.5" />
                 <div>
-                  <p className="font-medium text-amber-800 text-sm">
+                  <p className="font-medium text-warning-800 text-sm">
                     Hint {currentHintIndex + 1}:
                   </p>
-                  <p className="text-amber-700">
+                  <p className="text-warning-700">
                     {currentProblem.hints[currentHintIndex]}
                   </p>
                 </div>
@@ -401,17 +490,19 @@ const InteractiveProblemArea: React.FC<InteractiveProblemAreaProps> = ({
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
-              className={`p-3 rounded-md ${feedback === "correct" ? "bg-green-50 border border-green-200" : "bg-red-50 border border-red-200"}`}
+              className={`p-3 rounded-md shadow-soft ${feedback === "correct" ? "bg-success-50 border border-success-200" : "bg-error-50 border border-error-200"}`}
             >
               <div className="flex items-center">
                 {feedback === "correct" ? (
-                  <Check className="h-5 w-5 text-green-500 mr-2" />
+                  <Check className="h-5 w-5 text-success-500 mr-2" />
                 ) : (
-                  <X className="h-5 w-5 text-red-500 mr-2" />
+                  <X className="h-5 w-5 text-error-500 mr-2" />
                 )}
                 <p
                   className={
-                    feedback === "correct" ? "text-green-700" : "text-red-700"
+                    feedback === "correct"
+                      ? "text-success-700"
+                      : "text-error-700"
                   }
                 >
                   {feedback === "correct"
@@ -454,7 +545,7 @@ const InteractiveProblemArea: React.FC<InteractiveProblemAreaProps> = ({
           <span className="mr-2">Progress:</span>
           <div className="w-32 h-2 bg-gray-200 rounded-full overflow-hidden">
             <div
-              className="h-full bg-blue-500 rounded-full"
+              className="h-full bg-secondary-500 rounded-full animate-pulse-gentle"
               style={{
                 width: `${(currentProblemIndex / problems.length) * 100}%`,
               }}
@@ -470,11 +561,11 @@ const InteractiveProblemArea: React.FC<InteractiveProblemAreaProps> = ({
 const getDifficultyColor = (difficulty: string) => {
   switch (difficulty) {
     case "easy":
-      return "bg-green-100 text-green-800";
+      return "bg-success-100 text-success-800";
     case "medium":
-      return "bg-yellow-100 text-yellow-800";
+      return "bg-warning-100 text-warning-800";
     case "hard":
-      return "bg-red-100 text-red-800";
+      return "bg-error-100 text-error-800";
     default:
       return "bg-gray-100 text-gray-800";
   }

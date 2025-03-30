@@ -32,6 +32,14 @@ interface AITeacherVideoProps {
   subject?: string;
   enableSpeech?: boolean;
   enableVoiceInput?: boolean;
+  observationStatus?:
+    | "observing"
+    | "thinking"
+    | "helping"
+    | "praising"
+    | "idle";
+  studentActivity?: "solving" | "stuck" | "reviewing" | "idle";
+  timeSpentOnProblem?: number;
 }
 
 const AITeacherVideo = ({
@@ -46,6 +54,9 @@ const AITeacherVideo = ({
   subject = "mathematics",
   enableSpeech = true,
   enableVoiceInput = true,
+  observationStatus = "observing",
+  studentActivity = "idle",
+  timeSpentOnProblem = 0,
 }: AITeacherVideoProps) => {
   const [localMuted, setLocalMuted] = useState(isMuted);
   const [videoEnabled, setVideoEnabled] = useState(true);
@@ -54,12 +65,44 @@ const AITeacherVideo = ({
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [observationText, setObservationText] = useState<string>("");
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       role: "system",
-      content: `You are ${teacherName}, an AI math teacher specializing in ${subject} for K-12 students. You are enthusiastic, encouraging, and explain concepts in simple terms. Keep responses concise (under 100 words) and engaging for young students.`,
+      content: `You are ${teacherName}, an AI math teacher specializing in ${subject} for K-12 students. You are enthusiastic, encouraging, and explain concepts in simple terms. Keep responses concise (under 100 words) and engaging for young students. Remember their progress and refer to past interactions when appropriate.`,
     },
   ]);
+
+  // Observation status messages based on teacher's current state
+  const observationMessages = {
+    observing: [
+      "I'm watching your progress...",
+      "I see you're working on this...",
+      "I'm here if you need help",
+      "Take your time",
+    ],
+    thinking: [
+      "Hmm, let me think about this...",
+      "Considering your approach...",
+      "Analyzing your solution...",
+    ],
+    helping: [
+      "Let me guide you here...",
+      "I think I can help with this",
+      "Let's solve this together",
+    ],
+    praising: [
+      "Great work!",
+      "Excellent approach!",
+      "You're doing wonderfully!",
+      "I'm impressed by your thinking",
+    ],
+    idle: [
+      "Ready when you are",
+      "What would you like to learn?",
+      "I'm here to help",
+    ],
+  };
   const [currentMessage, setCurrentMessage] = useState<string>("");
   const [transcript, setTranscript] = useState<string>("");
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -243,6 +286,34 @@ const AITeacherVideo = ({
     }
   }, []);
 
+  // Update observation text based on status
+  useEffect(() => {
+    if (observationStatus) {
+      const messages = observationMessages[observationStatus];
+      const randomIndex = Math.floor(Math.random() * messages.length);
+      setObservationText(messages[randomIndex]);
+    }
+  }, [observationStatus]);
+
+  // Provide contextual help based on student activity and time spent
+  useEffect(() => {
+    if (studentActivity === "stuck" && timeSpentOnProblem > 30) {
+      // If student is stuck for more than 30 seconds, offer help
+      const helpMessage = "I notice you might be stuck. Would you like a hint?";
+      setCurrentMessage(helpMessage);
+      if (enableSpeech) {
+        speakText(helpMessage);
+      }
+    } else if (studentActivity === "solving" && timeSpentOnProblem > 60) {
+      // If student has been solving for a while, offer encouragement
+      const encouragementMessage = "You're making good progress. Keep going!";
+      setCurrentMessage(encouragementMessage);
+      if (enableSpeech) {
+        speakText(encouragementMessage);
+      }
+    }
+  }, [studentActivity, timeSpentOnProblem]);
+
   // Cancel speech when component unmounts
   useEffect(() => {
     return () => {
@@ -310,8 +381,8 @@ const AITeacherVideo = ({
 
   // FaceTime-style container classes with fixed dimensions and aspect ratio
   const containerClasses = isMinimized
-    ? "fixed bottom-4 right-4 w-[300px] h-[500px] bg-[#111827] rounded-2xl shadow-xl z-50 overflow-hidden"
-    : "w-[300px] h-[500px] bg-[#111827] rounded-2xl shadow-xl overflow-hidden";
+    ? "fixed bottom-4 right-4 w-[300px] h-[500px] bg-[#111827] rounded-2xl shadow-xl z-50 overflow-hidden transition-all duration-300 ease-in-out hover:scale-105"
+    : "w-[300px] h-[500px] bg-[#111827] rounded-2xl shadow-xl overflow-hidden transition-all duration-300 ease-in-out";
 
   return (
     <div className={containerClasses}>
@@ -320,9 +391,15 @@ const AITeacherVideo = ({
         {/* Top status bar */}
         <div className="bg-[#111827] text-white p-3 flex justify-between items-center">
           <span className="text-sm font-medium">{teacherName}</span>
-          <span className="text-xs bg-green-500 px-2 py-0.5 rounded-full">
-            Active
-          </span>
+          <div className="flex items-center space-x-2">
+            <span className="text-xs bg-gradient-to-r from-blue-500 to-green-500 px-2 py-0.5 rounded-full flex items-center">
+              <span
+                className={`w-2 h-2 rounded-full mr-1 ${observationStatus === "observing" ? "bg-green-300 animate-pulse" : observationStatus === "thinking" ? "bg-yellow-300 animate-pulse" : observationStatus === "helping" ? "bg-blue-300 animate-pulse" : observationStatus === "praising" ? "bg-purple-300 animate-pulse" : "bg-gray-300"}`}
+              ></span>
+              {observationStatus.charAt(0).toUpperCase() +
+                observationStatus.slice(1)}
+            </span>
+          </div>
         </div>
 
         {/* Main video area - with pirate emoji style avatar like in the image */}
@@ -352,8 +429,17 @@ const AITeacherVideo = ({
 
           {/* Message bubble */}
           {currentMessage && (
-            <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white/90 px-4 py-3 rounded-lg max-w-[250px] shadow-lg">
+            <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white/90 px-4 py-3 rounded-lg max-w-[250px] shadow-lg border-l-4 border-blue-500">
               <p className="text-sm text-gray-800">{currentMessage}</p>
+            </div>
+          )}
+
+          {/* Observation status bubble - always visible */}
+          {observationText && !currentMessage && !isListening && (
+            <div className="absolute bottom-20 left-1/2 transform -translate-x-1/2 bg-blue-500/20 backdrop-blur-sm px-3 py-1.5 rounded-full max-w-[200px] text-center">
+              <p className="text-xs text-white font-medium">
+                {observationText}
+              </p>
             </div>
           )}
 

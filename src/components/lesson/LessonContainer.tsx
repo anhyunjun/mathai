@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { motion } from "framer-motion";
+import { motion as m } from "framer-motion";
 import AITeacherVideo from "./AITeacherVideo";
 import LessonContent from "./LessonContent";
 import LessonControls from "./LessonControls";
@@ -47,6 +47,13 @@ const LessonContainer: React.FC<LessonContainerProps> = ({
 }) => {
   const [activeTab, setActiveTab] = useState("lesson");
   const [isVideoMinimized, setIsVideoMinimized] = useState(false);
+  const [teacherObservationStatus, setTeacherObservationStatus] = useState<
+    "observing" | "thinking" | "helping" | "praising" | "idle"
+  >("observing");
+  const [studentActivity, setStudentActivity] = useState<
+    "solving" | "stuck" | "reviewing" | "idle"
+  >("idle");
+  const [timeSpentOnCurrentProblem, setTimeSpentOnCurrentProblem] = useState(0);
   const [isPlaying, setIsPlaying] = useState(true);
   const [volume, setVolume] = useState(75);
   const [isMuted, setIsMuted] = useState(false);
@@ -109,6 +116,41 @@ const LessonContainer: React.FC<LessonContainerProps> = ({
       document.removeEventListener("fullscreenchange", handleFullscreenChange);
     };
   }, []);
+
+  // Track time spent on current problem and update teacher observation status
+  useEffect(() => {
+    const timer = setInterval(() => {
+      if (activeTab === "practice" && studentActivity === "solving") {
+        setTimeSpentOnCurrentProblem((prev) => prev + 1);
+
+        // Update teacher observation status based on time spent
+        if (timeSpentOnCurrentProblem > 45) {
+          setTeacherObservationStatus("helping");
+        } else if (timeSpentOnCurrentProblem > 30) {
+          setTeacherObservationStatus("thinking");
+        } else {
+          setTeacherObservationStatus("observing");
+        }
+      }
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [activeTab, studentActivity, timeSpentOnCurrentProblem]);
+
+  // Reset timer when changing tabs
+  useEffect(() => {
+    setTimeSpentOnCurrentProblem(0);
+    if (activeTab === "lesson") {
+      setTeacherObservationStatus("observing");
+      setStudentActivity("reviewing");
+    } else if (activeTab === "practice") {
+      setTeacherObservationStatus("observing");
+      setStudentActivity("solving");
+    } else if (activeTab === "chat") {
+      setTeacherObservationStatus("idle");
+      setStudentActivity("idle");
+    }
+  }, [activeTab]);
 
   const toggleFullscreen = () => {
     if (!document.fullscreenElement) {
@@ -253,7 +295,7 @@ const LessonContainer: React.FC<LessonContainerProps> = ({
   };
 
   return (
-    <motion.div
+    <m.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       className="w-full h-full bg-background flex flex-col overflow-hidden"
@@ -265,17 +307,26 @@ const LessonContainer: React.FC<LessonContainerProps> = ({
           onValueChange={setActiveTab}
           className="flex-grow flex flex-col"
         >
-          <div className="bg-muted/30 border-b px-4 py-2 flex items-center justify-between">
-            <TabsList>
-              <TabsTrigger value="lesson" className="flex items-center">
+          <div className="bg-primary-50 border-b border-primary-100 px-4 py-3 flex items-center justify-between shadow-soft">
+            <TabsList className="bg-white shadow-soft">
+              <TabsTrigger
+                value="lesson"
+                className="flex items-center data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-all"
+              >
                 <BookOpen className="h-4 w-4 mr-2" />
                 Lesson
               </TabsTrigger>
-              <TabsTrigger value="practice" className="flex items-center">
+              <TabsTrigger
+                value="practice"
+                className="flex items-center data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-all"
+              >
                 <Award className="h-4 w-4 mr-2" />
                 Practice
               </TabsTrigger>
-              <TabsTrigger value="chat" className="flex items-center">
+              <TabsTrigger
+                value="chat"
+                className="flex items-center data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-all"
+              >
                 <MessageSquare className="h-4 w-4 mr-2" />
                 Chat
               </TabsTrigger>
@@ -289,6 +340,9 @@ const LessonContainer: React.FC<LessonContainerProps> = ({
                   isMinimized={true}
                   onToggleMinimize={() => setIsVideoMinimized(false)}
                   isMuted={isMuted}
+                  observationStatus={teacherObservationStatus}
+                  studentActivity={studentActivity}
+                  timeSpentOnProblem={timeSpentOnCurrentProblem}
                 />
               </div>
             )}
@@ -309,7 +363,7 @@ const LessonContainer: React.FC<LessonContainerProps> = ({
               </div>
 
               {!isVideoMinimized && (
-                <div className="w-[300px] min-w-[300px] h-full border-l flex items-center justify-center">
+                <div className="w-[300px] min-w-[300px] h-full border-l border-primary-100 flex items-center justify-center bg-primary-50">
                   <div className="flex items-center justify-center">
                     <AITeacherVideo
                       teacherName={teacherName}
@@ -317,45 +371,52 @@ const LessonContainer: React.FC<LessonContainerProps> = ({
                       onToggleMinimize={() => setIsVideoMinimized(true)}
                       isMuted={isMuted}
                       avatarSrc="https://api.dicebear.com/7.x/avataaars/svg?seed=mathkong&accessories=eyepatch"
+                      observationStatus={teacherObservationStatus}
+                      studentActivity={studentActivity}
+                      timeSpentOnProblem={timeSpentOnCurrentProblem}
                     />
                   </div>
                 </div>
               )}
             </TabsContent>
 
-            <TabsContent value="practice" className="h-full p-4 overflow-auto">
-              <InteractiveProblemArea currentLesson={lessonTitle} />
+            <TabsContent value="practice" className="h-full">
+              <InteractiveProblemArea lessonType={lessonType} />
             </TabsContent>
 
-            <TabsContent value="chat" className="h-full flex flex-col p-4">
-              <div className="flex-grow overflow-y-auto mb-4 space-y-4 p-2">
-                {chatHistory.map((msg, index) => (
-                  <div
-                    key={index}
-                    className={`flex ${msg.sender === "You" ? "justify-end" : "justify-start"}`}
-                  >
+            <TabsContent value="chat" className="h-full p-4 overflow-y-auto">
+              <div className="flex flex-col h-full">
+                <div className="flex-grow overflow-y-auto mb-4 space-y-4">
+                  {chatHistory.map((chat, index) => (
                     <div
-                      className={`max-w-[80%] rounded-lg p-3 ${msg.sender === "You" ? "bg-primary text-primary-foreground" : "bg-muted"}`}
+                      key={index}
+                      className={`flex ${chat.sender === "You" ? "justify-end" : "justify-start"}`}
                     >
-                      <div className="font-semibold text-sm">{msg.sender}</div>
-                      <div>{msg.message}</div>
-                      <div className="text-xs opacity-70 mt-1 text-right">
-                        {msg.timestamp}
+                      <div
+                        className={`max-w-[80%] p-3 rounded-lg ${chat.sender === "You" ? "bg-primary text-primary-foreground" : "bg-muted"} ${chat.isProactive ? "border-l-4 border-primary" : ""}`}
+                      >
+                        <div className="font-semibold text-sm mb-1">
+                          {chat.sender}{" "}
+                          <span className="text-xs font-normal opacity-70">
+                            {chat.timestamp}
+                          </span>
+                        </div>
+                        <div>{chat.message}</div>
                       </div>
                     </div>
-                  </div>
-                ))}
-              </div>
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  value={chatMessage}
-                  onChange={(e) => setChatMessage(e.target.value)}
-                  placeholder="Ask a question about the lesson..."
-                  className="flex-grow px-4 py-2 rounded-md border focus:outline-none focus:ring-2 focus:ring-primary"
-                  onKeyDown={(e) => e.key === "Enter" && handleSendMessage()}
-                />
-                <Button onClick={handleSendMessage}>Send</Button>
+                  ))}
+                </div>
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="text"
+                    value={chatMessage}
+                    onChange={(e) => setChatMessage(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && handleSendMessage()}
+                    placeholder="Ask a question about the lesson..."
+                    className="flex-grow p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                  />
+                  <Button onClick={handleSendMessage}>Send</Button>
+                </div>
               </div>
             </TabsContent>
           </div>
@@ -363,31 +424,35 @@ const LessonContainer: React.FC<LessonContainerProps> = ({
       </div>
 
       {/* Lesson controls */}
-      <LessonControls
-        isPlaying={isPlaying}
-        onPlayPause={handlePlayPause}
-        onEndLesson={handleEndLesson}
-        volume={volume}
-        onVolumeChange={handleVolumeChange}
-        isMuted={isMuted}
-        onMuteToggle={handleMuteToggle}
-        isFullscreen={isFullscreen}
-        onFullscreenToggle={toggleFullscreen}
-        onOpenChat={() => setShowChatDialog(true)}
-        onOpenHelp={() => setShowHelpDialog(true)}
-      />
+      <div className="border-t border-primary-100 bg-white">
+        <LessonControls
+          isPlaying={isPlaying}
+          onPlayPause={handlePlayPause}
+          volume={volume}
+          onVolumeChange={handleVolumeChange}
+          isMuted={isMuted}
+          onMuteToggle={handleMuteToggle}
+          isFullscreen={isFullscreen}
+          onFullscreenToggle={toggleFullscreen}
+          onEndLesson={handleEndLesson}
+          currentSlide={currentLessonSlide}
+          totalSlides={totalSlides}
+          onNextSlide={handleNextSlide}
+          onPrevSlide={handlePrevSlide}
+        />
+      </div>
 
-      {/* End Lesson Confirmation Dialog */}
+      {/* End Lesson Dialog */}
       <AlertDialog
         open={showEndLessonDialog}
         onOpenChange={setShowEndLessonDialog}
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>End Current Lesson?</AlertDialogTitle>
+            <AlertDialogTitle>End this lesson?</AlertDialogTitle>
             <AlertDialogDescription>
               Are you sure you want to end this lesson? Your progress will be
-              saved, but you'll exit the current session.
+              saved.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -399,127 +464,37 @@ const LessonContainer: React.FC<LessonContainerProps> = ({
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Help Dialog */}
-      <Dialog open={showHelpDialog} onOpenChange={setShowHelpDialog}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Lesson Help</DialogTitle>
-            <DialogDescription>
-              Here's how to navigate your interactive math lesson.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="flex items-start space-x-3">
-              <div className="bg-primary/10 p-2 rounded-full">
-                <BookOpen className="h-5 w-5 text-primary" />
-              </div>
-              <div>
-                <h4 className="font-medium">Lesson Tab</h4>
-                <p className="text-sm text-muted-foreground">
-                  View lesson content and follow along with your AI teacher.
-                </p>
-              </div>
-            </div>
-            <div className="flex items-start space-x-3">
-              <div className="bg-primary/10 p-2 rounded-full">
-                <Award className="h-5 w-5 text-primary" />
-              </div>
-              <div>
-                <h4 className="font-medium">Practice Tab</h4>
-                <p className="text-sm text-muted-foreground">
-                  Solve interactive problems related to the lesson.
-                </p>
-              </div>
-            </div>
-            <div className="flex items-start space-x-3">
-              <div className="bg-primary/10 p-2 rounded-full">
-                <MessageSquare className="h-5 w-5 text-primary" />
-              </div>
-              <div>
-                <h4 className="font-medium">Chat Tab</h4>
-                <p className="text-sm text-muted-foreground">
-                  Ask questions and get real-time answers from your AI teacher.
-                </p>
-              </div>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button onClick={() => setShowHelpDialog(false)}>Got it</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Chat Dialog (for when in minimized view) */}
+      {/* Chat Notification Dialog */}
       <Dialog open={showChatDialog} onOpenChange={setShowChatDialog}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <div className="flex items-center justify-between">
-              <DialogTitle>Chat with {teacherName}</DialogTitle>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setShowChatDialog(false)}
-              >
-                <X className="h-4 w-4" />
-              </Button>
-            </div>
+            <DialogTitle>New message from {teacherName}</DialogTitle>
+            <DialogDescription>
+              Your AI teacher has a question or suggestion for you.
+            </DialogDescription>
           </DialogHeader>
-          <div className="flex flex-col h-[400px]">
-            <div className="flex-grow overflow-y-auto mb-4 space-y-4 p-2">
-              {chatHistory.map((msg, index) => (
-                <div
-                  key={index}
-                  className={`flex ${msg.sender === "You" ? "justify-end" : "justify-start"}`}
-                >
-                  <div
-                    className={`max-w-[80%] rounded-lg p-3 ${
-                      msg.sender === "You"
-                        ? "bg-primary text-primary-foreground"
-                        : msg.isProactive
-                          ? "bg-blue-100 border border-blue-200"
-                          : "bg-muted"
-                    }`}
-                  >
-                    <div className="flex items-center gap-2">
-                      {msg.sender === "AI" && (
-                        <div className="w-6 h-6 rounded-full overflow-hidden bg-blue-100">
-                          <img
-                            src="https://api.dicebear.com/7.x/avataaars/svg?seed=mathkong&accessories=eyepatch"
-                            alt="AI Teacher"
-                            className="w-full h-full object-cover"
-                          />
-                        </div>
-                      )}
-                      <div className="font-semibold text-sm">{msg.sender}</div>
-                      {msg.isProactive && (
-                        <span className="text-xs bg-blue-200 text-blue-800 px-2 py-0.5 rounded-full">
-                          Proactive
-                        </span>
-                      )}
-                    </div>
-                    <div className="mt-1">{msg.message}</div>
-                    <div className="text-xs opacity-70 mt-1 text-right">
-                      {msg.timestamp}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={chatMessage}
-                onChange={(e) => setChatMessage(e.target.value)}
-                placeholder="Ask a question..."
-                className="flex-grow px-4 py-2 rounded-md border focus:outline-none focus:ring-2 focus:ring-primary"
-                onKeyDown={(e) => e.key === "Enter" && handleSendMessage()}
-              />
-              <Button onClick={handleSendMessage}>Send</Button>
-            </div>
+          <div className="p-4 bg-muted rounded-md">
+            {chatHistory.length > 0 &&
+              chatHistory[chatHistory.length - 1].isProactive && (
+                <p>{chatHistory[chatHistory.length - 1].message}</p>
+              )}
           </div>
+          <DialogFooter className="flex justify-between">
+            <Button variant="outline" onClick={() => setShowChatDialog(false)}>
+              Dismiss
+            </Button>
+            <Button
+              onClick={() => {
+                setActiveTab("chat");
+                setShowChatDialog(false);
+              }}
+            >
+              Reply
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
-    </motion.div>
+    </m.div>
   );
 };
 
