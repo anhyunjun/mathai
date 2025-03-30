@@ -3,17 +3,8 @@ import { motion as m } from "framer-motion";
 import AITeacherVideo from "./AITeacherVideo";
 import LessonContent from "./LessonContent";
 import LessonControls from "./LessonControls";
-import InteractiveProblemArea from "../practice/InteractiveProblemArea";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from "@/components/ui/dialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -24,7 +15,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { BookOpen, MessageSquare, Award, X, Mic } from "lucide-react";
+import { BookOpen, Award, X, Mic } from "lucide-react";
 
 interface LessonContainerProps {
   teacherName?: string;
@@ -34,6 +25,7 @@ interface LessonContainerProps {
   lessonType?: "algebra" | "geometry" | "calculus" | "statistics";
   currentSlide?: number;
   totalSlides?: number;
+  isPracticeMode?: boolean;
 }
 
 const LessonContainer: React.FC<LessonContainerProps> = ({
@@ -44,7 +36,38 @@ const LessonContainer: React.FC<LessonContainerProps> = ({
   lessonType = "algebra",
   currentSlide = 1,
   totalSlides = 10,
+  isPracticeMode = false,
 }) => {
+  // Add CSS for teacher sidebar container
+  React.useEffect(() => {
+    const style = document.createElement("style");
+    style.innerHTML = `
+      .teacher-sidebar-container {
+        width: 280px;
+        position: fixed;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        background: white;
+        border-left: 1px solid #e5e7eb;
+        display: flex;
+        flex-direction: column;
+        padding: 1rem;
+        overflow-y: auto;
+        z-index: 50;
+      }
+      @media (min-width: 1024px) {
+        .teacher-sidebar-container {
+          width: 300px;
+        }
+      }
+    `;
+    document.head.appendChild(style);
+    return () => {
+      document.head.removeChild(style);
+    };
+  }, []);
+
   const [activeTab, setActiveTab] = useState("lesson");
   const [isVideoMinimized, setIsVideoMinimized] = useState(false);
   const [teacherObservationStatus, setTeacherObservationStatus] = useState<
@@ -59,8 +82,6 @@ const LessonContainer: React.FC<LessonContainerProps> = ({
   const [isMuted, setIsMuted] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showEndLessonDialog, setShowEndLessonDialog] = useState(false);
-  const [showChatDialog, setShowChatDialog] = useState(false);
-  const [showHelpDialog, setShowHelpDialog] = useState(false);
   const [currentLessonSlide, setCurrentLessonSlide] = useState(currentSlide);
   const [chatMessage, setChatMessage] = useState("");
   const [isListening, setIsListening] = useState(false);
@@ -129,16 +150,39 @@ const LessonContainer: React.FC<LessonContainerProps> = ({
             timestamp: new Date().toLocaleTimeString(),
           };
 
-          setChatHistory([...chatHistory, newMessage]);
+          // Use functional update to ensure we're working with the latest state
+          setChatHistory((prevHistory) => [...prevHistory, newMessage]);
 
           // Simulate AI response after a short delay
           setTimeout(() => {
+            // Generate a dynamic response based on the voice input
+            let responseMessage = "";
+
+            if (
+              userInput.toLowerCase().includes("hint") ||
+              userInput.toLowerCase().includes("help")
+            ) {
+              responseMessage = `Here's a hint: ${
+                currentLessonSlide <= 5
+                  ? "Try using the quadratic formula where a, b, and c are the coefficients."
+                  : "Consider factoring the expression first before solving."
+              }`;
+            } else if (userInput.toLowerCase().includes("example")) {
+              responseMessage = `Here's an example: If we have 2x² - 5x - 3 = 0, we can ${
+                currentLessonSlide % 2 === 0
+                  ? "use the quadratic formula with a=2, b=-5, and c=-3."
+                  : "factor it as (2x+1)(x-3)=0."
+              }`;
+            } else {
+              responseMessage = `I understand your question about "${userInput.substring(0, 30)}${userInput.length > 30 ? "..." : ""}". Let me explain...`;
+            }
+
             const aiResponse = {
               sender: "AI",
-              message: `I understand your question about "${userInput}". Let me explain...`,
+              message: responseMessage,
               timestamp: new Date().toLocaleTimeString(),
             };
-            setChatHistory((prev) => [...prev, aiResponse]);
+            setChatHistory((prevHistory) => [...prevHistory, aiResponse]);
           }, 1000);
         }
       };
@@ -158,7 +202,7 @@ const LessonContainer: React.FC<LessonContainerProps> = ({
         speechRecognitionRef.current.abort();
       }
     };
-  }, [chatHistory]);
+  }, [currentLessonSlide]); // Add currentLessonSlide as dependency to update responses based on slide
 
   // Function to start listening for speech
   const startListening = () => {
@@ -181,15 +225,40 @@ const LessonContainer: React.FC<LessonContainerProps> = ({
     };
   }, []);
 
+  // Update current slide when it changes from parent
+  useEffect(() => {
+    setCurrentLessonSlide(currentSlide);
+
+    // Update the title and description based on whether it's a practice slide
+    if (isPracticeMode) {
+      // Don't change the main title, but update the description
+      const practiceDescription =
+        "Practice what you've learned with interactive problems";
+      // We don't update lessonTitle here as it's passed from parent
+    }
+  }, [currentSlide, isPracticeMode]);
+
   // Track time spent on current problem and update teacher observation status
   useEffect(() => {
     const timer = setInterval(() => {
-      if (activeTab === "practice" && studentActivity === "solving") {
+      if (studentActivity === "solving") {
         setTimeSpentOnCurrentProblem((prev) => prev + 1);
 
         // Update teacher observation status based on time spent
         if (timeSpentOnCurrentProblem > 45) {
           setTeacherObservationStatus("helping");
+
+          // Offer help after 45 seconds if no interaction
+          if (timeSpentOnCurrentProblem === 46 && chatHistory.length < 2) {
+            const helpMessage = {
+              sender: "AI",
+              message:
+                "I notice you've been working on this problem for a while. Would you like some help?",
+              timestamp: new Date().toLocaleTimeString(),
+              isProactive: true,
+            };
+            setChatHistory((prev) => [...prev, helpMessage]);
+          }
         } else if (timeSpentOnCurrentProblem > 30) {
           setTeacherObservationStatus("thinking");
         } else {
@@ -199,22 +268,34 @@ const LessonContainer: React.FC<LessonContainerProps> = ({
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [activeTab, studentActivity, timeSpentOnCurrentProblem]);
+  }, [studentActivity, timeSpentOnCurrentProblem, chatHistory.length]);
 
-  // Reset timer when changing tabs
+  // Initialize lesson state
   useEffect(() => {
     setTimeSpentOnCurrentProblem(0);
-    if (activeTab === "lesson") {
-      setTeacherObservationStatus("observing");
-      setStudentActivity("reviewing");
-    } else if (activeTab === "practice") {
-      setTeacherObservationStatus("observing");
-      setStudentActivity("solving");
-    } else if (activeTab === "chat") {
-      setTeacherObservationStatus("idle");
-      setStudentActivity("idle");
+    setTeacherObservationStatus("observing");
+    setStudentActivity("reviewing");
+
+    // Add welcome message if chat is empty
+    if (chatHistory.length <= 1) {
+      const welcomeMessage = {
+        sender: "AI",
+        message:
+          "Welcome to the lesson! I'm here to help you understand quadratic equations. Feel free to ask questions anytime.",
+        timestamp: new Date().toLocaleTimeString(),
+        isProactive: true,
+      };
+      setChatHistory((prev) => [
+        ...prev.filter(
+          (msg) =>
+            msg.sender !== "AI" ||
+            !msg.isProactive ||
+            msg.message !== welcomeMessage.message,
+        ),
+        welcomeMessage,
+      ]);
     }
-  }, [activeTab]);
+  }, [chatHistory.length]);
 
   const toggleFullscreen = () => {
     if (!document.fullscreenElement) {
@@ -256,82 +337,164 @@ const LessonContainer: React.FC<LessonContainerProps> = ({
 
   const handleNextSlide = () => {
     if (currentLessonSlide < totalSlides) {
-      setCurrentLessonSlide(currentLessonSlide + 1);
+      // Update the current slide
+      setCurrentLessonSlide((prevSlide) => prevSlide + 1);
+
+      // Reset student activity state for the new slide
+      setStudentActivity("reviewing");
+      setTimeSpentOnCurrentProblem(0);
+      setTeacherObservationStatus("observing");
+
+      // Clear chat message input
+      setChatMessage("");
+
+      // Update teacher observation based on whether we're moving to a practice slide
+      const nextIsPractice = (currentLessonSlide + 1) % 2 === 0;
+      if (nextIsPractice) {
+        setTeacherObservationStatus("observing");
+        setStudentActivity("solving");
+      } else {
+        setTeacherObservationStatus("observing");
+        setStudentActivity("reviewing");
+      }
+
+      // Notify parent component about slide change
+      if (onEndLesson && currentLessonSlide + 1 >= totalSlides) {
+        // If this is the last slide, trigger the end lesson function
+        setTimeout(() => {
+          onEndLesson();
+        }, 1000);
+      }
 
       // Add proactive AI message when moving to a new slide
-      if (
-        currentLessonSlide === 2 ||
-        currentLessonSlide === 5 ||
-        currentLessonSlide === 8
-      ) {
-        const promptCategory =
-          currentLessonSlide < 4
-            ? "introduction"
-            : currentLessonSlide < 7
-              ? "midLesson"
-              : "practice";
-        const randomIndex = Math.floor(
-          Math.random() * proactivePrompts[promptCategory].length,
-        );
-        const proactiveMessage = {
-          sender: "AI",
-          message: proactivePrompts[promptCategory][randomIndex],
-          timestamp: new Date().toLocaleTimeString(),
-          isProactive: true,
-        };
+      // Use different messages for different slides to avoid repetition
+      const newSlide = currentLessonSlide + 1;
 
-        // Add the message after a short delay to seem more natural
-        setTimeout(() => {
-          setChatHistory((prev) => [...prev, proactiveMessage]);
-          // If chat tab is not active, show a notification
-          if (activeTab !== "chat") {
-            setShowChatDialog(true);
-          }
-        }, 3000);
+      // Determine which category of prompts to use based on the slide number
+      let promptCategory;
+      if (newSlide < 4) {
+        promptCategory = "introduction";
+      } else if (newSlide < 7) {
+        promptCategory = "midLesson";
+      } else {
+        promptCategory = "practice";
       }
+
+      // Select a message that hasn't been used recently if possible
+      const recentMessages = chatHistory.slice(-5).map((msg) => msg.message);
+      const availablePrompts = proactivePrompts[promptCategory].filter(
+        (prompt) => !recentMessages.includes(prompt),
+      );
+
+      // If all prompts have been used recently, just pick a random one
+      const promptsToUse =
+        availablePrompts.length > 0
+          ? availablePrompts
+          : proactivePrompts[promptCategory];
+      const randomIndex = Math.floor(Math.random() * promptsToUse.length);
+
+      const proactiveMessage = {
+        sender: "AI",
+        message: promptsToUse[randomIndex],
+        timestamp: new Date().toLocaleTimeString(),
+        isProactive: true,
+      };
+
+      // Add the message after a short delay to seem more natural
+      setTimeout(() => {
+        setChatHistory((prevHistory) => [...prevHistory, proactiveMessage]);
+      }, 3000);
     }
   };
 
   const handlePrevSlide = () => {
     if (currentLessonSlide > 1) {
       setCurrentLessonSlide(currentLessonSlide - 1);
+      // Reset student activity state for the previous slide
+      setStudentActivity("reviewing");
+      setTimeSpentOnCurrentProblem(0);
+      setTeacherObservationStatus("observing");
+      setChatMessage("");
     }
   };
 
   const handleSendMessage = () => {
     if (chatMessage.trim()) {
+      const userMessage = chatMessage.trim();
       const newMessage = {
         sender: "You",
-        message: chatMessage,
+        message: userMessage,
         timestamp: new Date().toLocaleTimeString(),
       };
 
-      setChatHistory([...chatHistory, newMessage]);
+      // Use functional update to ensure we're working with the latest state
+      setChatHistory((prevHistory) => [...prevHistory, newMessage]);
       setChatMessage("");
 
       // Simulate AI response after a short delay
       setTimeout(() => {
-        // Determine if we should give an encouraging response
-        const shouldEncourage =
-          chatMessage.toLowerCase().includes("i understand") ||
-          chatMessage.toLowerCase().includes("got it") ||
-          chatMessage.toLowerCase().includes("makes sense");
+        // Generate different responses based on user input
+        let responseMessage = "";
 
-        let responseMessage =
-          "That's a great question about quadratic equations! Let me explain further...";
-
-        if (shouldEncourage) {
+        // Check for specific keywords to provide relevant responses
+        if (
+          userMessage.toLowerCase().includes("hint") ||
+          userMessage.toLowerCase().includes("help")
+        ) {
+          responseMessage = `Here's a hint for this problem: ${
+            currentLessonSlide <= 5
+              ? "Try using the quadratic formula where a, b, and c are the coefficients from the standard form."
+              : "Consider factoring the expression first before solving for the variable."
+          }`;
+        } else if (
+          userMessage.toLowerCase().includes("understand") ||
+          userMessage.toLowerCase().includes("got it") ||
+          userMessage.toLowerCase().includes("makes sense")
+        ) {
           const randomIndex = Math.floor(
             Math.random() * proactivePrompts.encouragement.length,
           );
           responseMessage = proactivePrompts.encouragement[randomIndex];
         } else if (
-          chatMessage.toLowerCase().includes("help") ||
-          chatMessage.toLowerCase().includes("confused") ||
-          chatMessage.toLowerCase().includes("don't understand")
+          userMessage.toLowerCase().includes("confused") ||
+          userMessage.toLowerCase().includes("don't understand") ||
+          userMessage.toLowerCase().includes("difficult")
         ) {
-          responseMessage =
-            "I can see this might be challenging. Let's break it down step by step...";
+          responseMessage = `I understand this concept can be challenging. Let me explain it differently: ${
+            currentLessonSlide <= 5
+              ? "The quadratic formula is a tool that helps us find the values of x that make the equation true. Think of it as a recipe that always works for any quadratic equation."
+              : "When we factor a quadratic equation, we're breaking it down into simpler parts that are easier to solve. It's like finding the building blocks of the equation."
+          }`;
+        } else if (userMessage.toLowerCase().includes("example")) {
+          responseMessage = `Here's an example: If we have 2x² - 5x - 3 = 0, we can ${
+            currentLessonSlide % 2 === 0
+              ? "use the quadratic formula with a=2, b=-5, and c=-3 to find that x = 3 or x = -0.5."
+              : "factor it as (2x+1)(x-3)=0, which gives us x = -1/2 or x = 3."
+          }`;
+        } else {
+          // Generate a response based on the current slide content
+          const topics = [
+            "quadratic formula",
+            "factoring",
+            "completing the square",
+            "graphical solutions",
+            "applications",
+          ];
+          const currentTopic =
+            topics[
+              Math.min(Math.floor(currentLessonSlide / 2), topics.length - 1)
+            ];
+          responseMessage = `That's a great question about ${currentTopic}! ${
+            userMessage.endsWith("?")
+              ? `To answer your question about "${userMessage.substring(0, 30)}${userMessage.length > 30 ? "..." : ""}", `
+              : ""
+          }Let me explain further: The key concept here is to ${
+            currentLessonSlide % 3 === 0
+              ? "identify the coefficients correctly before applying the formula."
+              : currentLessonSlide % 3 === 1
+                ? "recognize patterns that allow for easier factoring."
+                : "understand how these algebraic techniques relate to the graph of the parabola."
+          }`;
         }
 
         const aiResponse = {
@@ -339,10 +502,17 @@ const LessonContainer: React.FC<LessonContainerProps> = ({
           message: responseMessage,
           timestamp: new Date().toLocaleTimeString(),
         };
-        setChatHistory((prev) => [...prev, aiResponse]);
+
+        // Use functional update to ensure we're working with the latest state
+        setChatHistory((prevHistory) => [...prevHistory, aiResponse]);
 
         // If the user seems to understand, offer to move forward after a moment
-        if (shouldEncourage && currentLessonSlide < totalSlides) {
+        if (
+          (userMessage.toLowerCase().includes("understand") ||
+            userMessage.toLowerCase().includes("got it") ||
+            userMessage.toLowerCase().includes("makes sense")) &&
+          currentLessonSlide < totalSlides
+        ) {
           setTimeout(() => {
             const followUpMessage = {
               sender: "AI",
@@ -351,7 +521,7 @@ const LessonContainer: React.FC<LessonContainerProps> = ({
               timestamp: new Date().toLocaleTimeString(),
               isProactive: true,
             };
-            setChatHistory((prev) => [...prev, followUpMessage]);
+            setChatHistory((prevHistory) => [...prevHistory, followUpMessage]);
           }, 2000);
         }
       }, 1000);
@@ -364,184 +534,97 @@ const LessonContainer: React.FC<LessonContainerProps> = ({
       animate={{ opacity: 1 }}
       className="w-full h-full bg-background flex flex-col overflow-hidden relative lesson-container"
     >
-      {/* Main content area with tabs */}
+      {/* Main content area */}
       <div className="flex-grow flex flex-col overflow-hidden">
-        <Tabs
-          value={activeTab}
-          onValueChange={setActiveTab}
-          className="flex-grow flex flex-col"
-        >
-          <div className="bg-primary-50 border-b border-primary-100 px-4 py-3 flex items-center justify-between shadow-soft">
-            <TabsList className="bg-white shadow-soft">
-              <TabsTrigger
-                value="lesson"
-                className="flex items-center data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-all"
-              >
-                <BookOpen className="h-4 w-4 mr-2" />
-                Lesson
-              </TabsTrigger>
-              <TabsTrigger
-                value="practice"
-                className="flex items-center data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-all"
-              >
-                <Award className="h-4 w-4 mr-2" />
-                Practice
-              </TabsTrigger>
-              <TabsTrigger
-                value="chat"
-                className="flex items-center data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-all"
-              >
-                <MessageSquare className="h-4 w-4 mr-2" />
-                Chat
-              </TabsTrigger>
-            </TabsList>
+        <div className="bg-primary-50 border-b border-primary-100 px-4 py-3 flex items-center justify-between shadow-soft">
+          <div className="flex items-center">
+            <BookOpen className="h-5 w-5 mr-2 text-primary" />
+            <h2 className="text-lg font-medium">{lessonTitle}</h2>
+          </div>
 
-            {/* Teacher video when minimized */}
-            {isVideoMinimized && (
-              <div className="ml-auto z-50">
+          {/* Teacher video when minimized */}
+          {isVideoMinimized && (
+            <div className="ml-auto z-50">
+              <AITeacherVideo
+                teacherName={teacherName}
+                isMinimized={true}
+                onToggleMinimize={() => setIsVideoMinimized(false)}
+                isMuted={isMuted}
+                observationStatus={teacherObservationStatus}
+                studentActivity={studentActivity}
+                timeSpentOnProblem={timeSpentOnCurrentProblem}
+              />
+            </div>
+          )}
+        </div>
+
+        <div className="flex-grow overflow-hidden flex">
+          <div className="flex-grow overflow-hidden relative md:pr-[280px] lg:pr-[300px]">
+            <LessonContent
+              title={lessonTitle}
+              description={lessonDescription}
+              currentSlide={currentLessonSlide}
+              totalSlides={totalSlides}
+              onNextSlide={handleNextSlide}
+              onPrevSlide={handlePrevSlide}
+              lessonType={lessonType}
+              chatHistory={chatHistory}
+              isPracticeMode={isPracticeMode}
+            />
+          </div>
+
+          {!isVideoMinimized && (
+            <div className="teacher-sidebar-container fixed right-0 top-0 bottom-0 z-10">
+              <div className="flex-grow flex items-center justify-center">
                 <AITeacherVideo
                   teacherName={teacherName}
-                  isMinimized={true}
-                  onToggleMinimize={() => setIsVideoMinimized(false)}
+                  isMinimized={false}
+                  onToggleMinimize={() => setIsVideoMinimized(true)}
                   isMuted={isMuted}
+                  avatarSrc="https://api.dicebear.com/7.x/avataaars/svg?seed=mathkong&accessories=eyeglasses"
                   observationStatus={teacherObservationStatus}
                   studentActivity={studentActivity}
                   timeSpentOnProblem={timeSpentOnCurrentProblem}
                 />
               </div>
-            )}
-          </div>
 
-          <div className="flex-grow overflow-hidden">
-            <TabsContent value="lesson" className="h-full flex">
-              <div className="flex-grow overflow-hidden relative md:pr-[300px] lg:pr-[320px]">
-                <LessonContent
-                  title={lessonTitle}
-                  description={lessonDescription}
-                  currentSlide={currentLessonSlide}
-                  totalSlides={totalSlides}
-                  onNextSlide={handleNextSlide}
-                  onPrevSlide={handlePrevSlide}
-                  lessonType={lessonType}
-                  chatHistory={chatHistory}
-                />
-
-                {/* Floating question indicator - positioned differently based on screen size */}
-                {chatHistory.length > 0 && activeTab !== "chat" && (
-                  <div
-                    className="absolute bottom-4 right-4 md:right-[320px] lg:right-[340px] bg-primary text-white rounded-full p-2 shadow-lg cursor-pointer hover:bg-primary-600 transition-all z-20"
-                    onClick={() => setActiveTab("chat")}
-                  >
-                    <div className="relative">
-                      <MessageSquare size={24} />
-                      <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                        {
-                          chatHistory.filter(
-                            (msg) => msg.sender === "AI" && !msg.isProactive,
-                          ).length
-                        }
-                      </span>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {!isVideoMinimized && (
-                <div className="teacher-sidebar-container">
-                  <div className="flex-grow flex items-center justify-center">
-                    <AITeacherVideo
-                      teacherName={teacherName}
-                      isMinimized={false}
-                      onToggleMinimize={() => setIsVideoMinimized(true)}
-                      isMuted={isMuted}
-                      avatarSrc="https://api.dicebear.com/7.x/avataaars/svg?seed=mathkong&accessories=eyeglasses"
-                      observationStatus={teacherObservationStatus}
-                      studentActivity={studentActivity}
-                      timeSpentOnProblem={timeSpentOnCurrentProblem}
-                    />
-                  </div>
-
-                  {/* Enhanced Question Interface */}
-                  <div className="p-4 border-t border-primary-100">
-                    <h3 className="text-sm font-medium mb-2 flex items-center">
-                      <MessageSquare size={14} className="mr-1 text-primary" />
-                      Ask a Question
-                    </h3>
-                    <div className="flex mb-2">
-                      <input
-                        type="text"
-                        placeholder="Type your question here..."
-                        className="flex-grow p-2 text-sm rounded-l-md border border-r-0 border-gray-300 focus:outline-none focus:ring-1 focus:ring-primary"
-                        value={chatMessage}
-                        onChange={(e) => setChatMessage(e.target.value)}
-                        onKeyDown={(e) =>
-                          e.key === "Enter" && handleSendMessage()
-                        }
-                      />
-                      <Button
-                        variant="primary"
-                        size="icon"
-                        className="rounded-l-none rounded-r-md"
-                        onClick={handleSendMessage}
-                      >
-                        <MessageSquare size={16} />
-                      </Button>
-                    </div>
-                    <Button
-                      variant={isListening ? "destructive" : "secondary"}
-                      className="w-full mt-2"
-                      onClick={startListening}
-                      disabled={isListening}
-                      leftIcon={<Mic size={16} />}
-                    >
-                      {isListening ? "Listening..." : "Ask with Voice"}
-                    </Button>
-                  </div>
-                </div>
-              )}
-            </TabsContent>
-
-            <TabsContent value="practice" className="h-full">
-              <InteractiveProblemArea lessonType={lessonType} />
-            </TabsContent>
-
-            <TabsContent value="chat" className="h-full p-4 overflow-y-auto">
-              <div className="flex flex-col h-full">
-                <div className="flex-grow overflow-y-auto mb-4 space-y-4">
-                  {chatHistory.map((chat, index) => (
-                    <div
-                      key={index}
-                      className={`flex ${chat.sender === "You" ? "justify-end" : "justify-start"}`}
-                    >
-                      <div
-                        className={`max-w-[80%] p-3 rounded-lg ${chat.sender === "You" ? "bg-primary text-primary-foreground" : "bg-muted"} ${chat.isProactive ? "border-l-4 border-primary" : ""}`}
-                      >
-                        <div className="font-semibold text-sm mb-1">
-                          {chat.sender}{" "}
-                          <span className="text-xs font-normal opacity-70">
-                            {chat.timestamp}
-                          </span>
-                        </div>
-                        <div>{chat.message}</div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                <div className="flex items-center space-x-2">
+              {/* Enhanced Question Interface */}
+              <div className="mt-2 border-t border-primary-100 pt-3">
+                <h3 className="text-sm font-medium mb-2 flex items-center">
+                  <BookOpen size={14} className="mr-1 text-primary" />
+                  Ask a Question
+                </h3>
+                <div className="flex mb-2">
                   <input
                     type="text"
+                    placeholder="Type your question here..."
+                    className="flex-grow p-2 text-sm rounded-l-md border border-r-0 border-gray-300 focus:outline-none focus:ring-1 focus:ring-primary w-full"
                     value={chatMessage}
                     onChange={(e) => setChatMessage(e.target.value)}
                     onKeyDown={(e) => e.key === "Enter" && handleSendMessage()}
-                    placeholder="Ask a question about the lesson..."
-                    className="flex-grow p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
                   />
-                  <Button onClick={handleSendMessage}>Send</Button>
+                  <Button
+                    variant="primary"
+                    size="icon"
+                    className="rounded-l-none rounded-r-md flex-shrink-0"
+                    onClick={handleSendMessage}
+                  >
+                    <BookOpen size={16} />
+                  </Button>
                 </div>
+                <Button
+                  variant={isListening ? "destructive" : "secondary"}
+                  className="w-full mt-2"
+                  onClick={startListening}
+                  disabled={isListening}
+                >
+                  <Mic size={16} className="mr-2" />
+                  {isListening ? "Listening..." : "Ask with Voice"}
+                </Button>
               </div>
-            </TabsContent>
-          </div>
-        </Tabs>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Lesson controls */}
@@ -556,10 +639,6 @@ const LessonContainer: React.FC<LessonContainerProps> = ({
           isFullscreen={isFullscreen}
           onFullscreenToggle={toggleFullscreen}
           onEndLesson={handleEndLesson}
-          currentSlide={currentLessonSlide}
-          totalSlides={totalSlides}
-          onNextSlide={handleNextSlide}
-          onPrevSlide={handlePrevSlide}
         />
       </div>
 
@@ -584,37 +663,6 @@ const LessonContainer: React.FC<LessonContainerProps> = ({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-
-      {/* Chat Notification Dialog */}
-      <Dialog open={showChatDialog} onOpenChange={setShowChatDialog}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>New message from {teacherName}</DialogTitle>
-            <DialogDescription>
-              Your AI teacher has a question or suggestion for you.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="p-4 bg-muted rounded-md">
-            {chatHistory.length > 0 &&
-              chatHistory[chatHistory.length - 1].isProactive && (
-                <p>{chatHistory[chatHistory.length - 1].message}</p>
-              )}
-          </div>
-          <DialogFooter className="flex justify-between">
-            <Button variant="outline" onClick={() => setShowChatDialog(false)}>
-              Dismiss
-            </Button>
-            <Button
-              onClick={() => {
-                setActiveTab("chat");
-                setShowChatDialog(false);
-              }}
-            >
-              Reply
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </m.div>
   );
 };

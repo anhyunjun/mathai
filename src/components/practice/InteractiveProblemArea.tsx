@@ -10,6 +10,11 @@ import {
   Star,
   Trophy,
   Sparkles,
+  BookOpen,
+  FileText,
+  Video,
+  Link,
+  Mic,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -19,9 +24,11 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
+  CardDescription,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 
 interface MathProblem {
   id: string;
@@ -36,6 +43,7 @@ interface InteractiveProblemAreaProps {
   problems?: MathProblem[];
   onComplete?: (results: { correct: number; total: number }) => void;
   currentLesson?: string;
+  lessonType?: "algebra" | "geometry" | "calculus" | "statistics";
 }
 
 const defaultProblems: MathProblem[] = [
@@ -94,6 +102,7 @@ const InteractiveProblemArea: React.FC<InteractiveProblemAreaProps> = ({
   const [lastActivityTime, setLastActivityTime] = useState<number>(Date.now());
   const [streakCount, setStreakCount] = useState(0);
   const [lastAnswerTime, setLastAnswerTime] = useState<number | null>(null);
+  const [questionInput, setQuestionInput] = useState("");
 
   const currentProblem = problems[currentProblemIndex];
 
@@ -283,40 +292,52 @@ const InteractiveProblemArea: React.FC<InteractiveProblemAreaProps> = ({
     setShowHint(false);
     setCurrentHintIndex(0);
     setResults((prev) => ({ ...prev, total: prev.total + 1 }));
+    setStudentState("idle");
+    setLastActivityTime(Date.now());
+    setShowAiPrompt(false);
+    setAiPrompt(null);
+    setQuestionInput("");
+  };
+
+  const handleAskQuestion = () => {
+    if (questionInput.trim()) {
+      // Generate a response based on the question
+      let response = "";
+
+      if (
+        questionInput.toLowerCase().includes("hint") ||
+        questionInput.toLowerCase().includes("help")
+      ) {
+        response = `Here's a hint: ${currentProblem.hints[Math.min(currentHintIndex, currentProblem.hints.length - 1)]}`;
+      } else if (
+        questionInput.toLowerCase().includes("solution") ||
+        questionInput.toLowerCase().includes("answer")
+      ) {
+        response =
+          "Try working through the problem step by step. Use the hint button if you need guidance.";
+      } else if (questionInput.toLowerCase().includes("formula")) {
+        response = currentProblem.topic.toLowerCase().includes("circle")
+          ? "For circles, remember that area = πr² and circumference = 2πr."
+          : "For quadratic equations, you can use the quadratic formula: x = (-b ± √(b² - 4ac)) / 2a";
+      } else {
+        response = `I understand your question about "${questionInput.substring(0, 30)}${questionInput.length > 30 ? "..." : ""}".
+          Let me help you with this ${currentProblem.topic} problem. ${currentProblem.hints[0]}`;
+      }
+
+      // Show the response as an AI prompt
+      setAiPrompt(response);
+      setShowAiPrompt(true);
+      setQuestionInput("");
+
+      // Hide the prompt after some time
+      setTimeout(() => {
+        setShowAiPrompt(false);
+      }, 8000);
+    }
   };
 
   return (
-    <div className="w-full h-full bg-white p-4 rounded-lg shadow-md flex flex-col relative">
-      {/* AI Teacher Prompt Bubble */}
-      <AnimatePresence>
-        {showAiPrompt && aiPrompt && (
-          <motion.div
-            initial={{ opacity: 0, y: 20, scale: 0.8 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.8, y: 10 }}
-            className="absolute top-4 right-4 bg-secondary-100 border-l-4 border-blue-500 p-3 rounded-lg max-w-xs z-10 shadow-medium"
-            whileHover={{ scale: 1.05 }}
-            transition={{ type: "spring", stiffness: 400, damping: 10 }}
-          >
-            <div className="flex items-start gap-2">
-              <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0 border-2 border-blue-300">
-                <img
-                  src="https://api.dicebear.com/7.x/avataaars/svg?seed=mathkong&accessories=eyepatch"
-                  alt="AI Teacher"
-                  className="w-full h-full"
-                />
-              </div>
-              <div>
-                <p className="text-sm font-medium text-secondary-800">
-                  Ms. Kong
-                </p>
-                <p className="text-sm text-secondary-700">{aiPrompt}</p>
-              </div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
+    <div className="w-full h-full bg-white rounded-lg shadow-md flex flex-col relative overflow-hidden">
       {/* Reward Animation */}
       <AnimatePresence>
         {showReward && (
@@ -375,181 +396,374 @@ const InteractiveProblemArea: React.FC<InteractiveProblemAreaProps> = ({
         )}
       </AnimatePresence>
 
-      <div className="flex justify-between items-center mb-4">
-        <div className="flex items-center">
-          <div className="w-8 h-8 rounded-full overflow-hidden mr-3 border-2 border-blue-300">
-            <img
-              src="https://api.dicebear.com/7.x/avataaars/svg?seed=mathkong&accessories=eyepatch"
-              alt="AI Teacher"
-              className="w-full h-full"
-            />
+      <div className="w-full h-full flex flex-col">
+        <div className="bg-white border-b px-4 py-2 flex items-center justify-between">
+          <div className="flex items-center">
+            <div className="w-8 h-8 rounded-full overflow-hidden mr-3 border-2 border-blue-300 flex-shrink-0">
+              <img
+                src="https://api.dicebear.com/7.x/avataaars/svg?seed=mathkong&accessories=eyepatch"
+                alt="AI Teacher"
+                className="w-full h-full"
+              />
+            </div>
+            <h2 className="text-xl font-bold text-gray-800 truncate">
+              {currentLesson}
+            </h2>
           </div>
-          <h2 className="text-xl font-bold text-gray-800">
-            {currentLesson} - Practice
-          </h2>
+          <div className="text-sm text-gray-600 flex items-center ml-2">
+            <div className="bg-secondary-100 text-secondary-800 px-2 py-1 rounded-full text-xs font-medium flex items-center">
+              <Award className="h-3 w-3 mr-1 flex-shrink-0" />
+              <span className="whitespace-nowrap">Streak: {streakCount}</span>
+            </div>
+          </div>
         </div>
-        <div className="text-sm text-gray-600 flex items-center">
-          <div className="mr-3 bg-secondary-100 text-secondary-800 px-2 py-1 rounded-full text-xs font-medium flex items-center">
-            <Award className="h-3 w-3 mr-1" />
-            Streak: {streakCount}
-          </div>
-          Problem {currentProblemIndex + 1} of {problems.length}
+
+        <div className="flex-grow overflow-auto p-4 md:p-6 md:pr-[280px] lg:pr-[320px] pb-16">
+          <Card className="mb-4">
+            <CardHeader>
+              <CardTitle className="flex items-center flex-wrap gap-y-2">
+                <span
+                  className={`inline-flex items-center justify-center w-6 h-6 rounded-full mr-2 text-xs flex-shrink-0 ${getDifficultyColor(currentProblem.difficulty)}`}
+                >
+                  {currentProblemIndex + 1}
+                </span>
+                <span className="text-lg truncate mr-2">
+                  {currentProblem.topic}
+                </span>
+                <span className="ml-auto text-sm bg-gray-100 px-2 py-1 rounded whitespace-nowrap">
+                  {currentProblem.difficulty}
+                </span>
+              </CardTitle>
+              <CardDescription>
+                Problem {currentProblemIndex + 1} of {problems.length}
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="p-4 bg-gray-50 rounded-md border border-gray-200 shadow-sm">
+                <div className="flex items-start">
+                  <div className="mr-3 flex-shrink-0">
+                    <div
+                      className={`w-8 h-8 rounded-full flex items-center justify-center ${getDifficultyColor(currentProblem.difficulty)}`}
+                    >
+                      <span className="text-sm font-medium">
+                        {currentProblemIndex + 1}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="flex-1 overflow-hidden">
+                    <div className="flex items-center flex-wrap mb-1">
+                      <span className="text-xs font-medium text-gray-500 bg-gray-200 px-2 py-0.5 rounded-full mr-2 mb-1">
+                        {currentProblem.topic}
+                      </span>
+                      <span className="text-xs font-medium text-gray-500 mb-1">
+                        {currentProblem.difficulty}
+                      </span>
+                    </div>
+                    <p className="text-lg font-medium text-gray-800 break-words">
+                      {currentProblem.question}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <label
+                  htmlFor="answer"
+                  className="block text-sm font-medium text-gray-700 flex items-center justify-between"
+                >
+                  <span>Your Answer:</span>
+                  {feedback === null && (
+                    <span className="text-xs text-gray-500 flex items-center">
+                      <HelpCircle className="h-3 w-3 mr-1" />
+                      Enter your solution to the problem
+                    </span>
+                  )}
+                </label>
+                <div className="relative">
+                  <Input
+                    id="answer"
+                    value={userAnswer}
+                    onChange={(e) => {
+                      setUserAnswer(e.target.value);
+                      setLastActivityTime(Date.now());
+                      setStudentState("typing");
+                    }}
+                    onFocus={() => {
+                      setLastActivityTime(Date.now());
+                      setStudentState("typing");
+                    }}
+                    placeholder="Enter your answer here"
+                    className={`w-full ${feedback !== null ? "border-gray-200 bg-gray-50" : ""}`}
+                    disabled={feedback !== null}
+                  />
+                  {feedback === "correct" && (
+                    <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                      <Check className="h-5 w-5 text-success-500" />
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <label
+                  htmlFor="workingArea"
+                  className="block text-sm font-medium text-gray-700 flex items-center"
+                >
+                  Working Area{" "}
+                  <span className="text-xs text-gray-500 ml-2">(optional)</span>
+                </label>
+                <Textarea
+                  id="workingArea"
+                  value={workingArea}
+                  onChange={(e) => {
+                    setWorkingArea(e.target.value);
+                    setLastActivityTime(Date.now());
+                    setStudentState("typing");
+                  }}
+                  onFocus={() => {
+                    setLastActivityTime(Date.now());
+                    setStudentState("typing");
+                  }}
+                  placeholder="Show your work here..."
+                  className="w-full h-32"
+                />
+              </div>
+
+              {/* Inline Hints Section */}
+              <div className="mt-4 space-y-3">
+                <div className="flex items-center justify-between flex-wrap gap-y-2">
+                  <h4 className="text-sm font-medium text-gray-700">Hints</h4>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={showNextHint}
+                    disabled={
+                      showHint &&
+                      currentHintIndex >= currentProblem.hints.length - 1
+                    }
+                    className="flex items-center text-secondary-600 hover:text-secondary-700"
+                  >
+                    <Lightbulb className="h-3.5 w-3.5 mr-1 flex-shrink-0" />
+                    <span className="whitespace-nowrap">
+                      {!showHint ? "Show Hint" : "Next Hint"}
+                    </span>
+                  </Button>
+                </div>
+
+                <AnimatePresence>
+                  {showHint && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: "auto" }}
+                      exit={{ opacity: 0, height: 0 }}
+                      transition={{ duration: 0.2 }}
+                      className="overflow-hidden"
+                    >
+                      <div className="p-3 bg-warning-50 border border-warning-200 rounded-md">
+                        <div className="flex items-start">
+                          <Lightbulb className="h-5 w-5 text-warning-500 mr-2 mt-0.5 flex-shrink-0" />
+                          <div className="flex-1 overflow-hidden">
+                            <p className="font-medium text-warning-800 text-sm">
+                              Hint {currentHintIndex + 1} of{" "}
+                              {currentProblem.hints.length}:
+                            </p>
+                            <p className="text-warning-700 break-words">
+                              {currentProblem.hints[currentHintIndex]}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+
+              {/* Inline Feedback Section */}
+              <AnimatePresence>
+                {feedback && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    transition={{ duration: 0.3 }}
+                    className="mt-4"
+                  >
+                    <div
+                      className={`p-4 rounded-md shadow-sm ${feedback === "correct" ? "bg-success-50 border border-success-200" : "bg-error-50 border border-error-200"}`}
+                    >
+                      <div className="flex items-start">
+                        {feedback === "correct" ? (
+                          <div className="h-8 w-8 rounded-full bg-success-100 flex items-center justify-center mr-3 flex-shrink-0">
+                            <Check className="h-5 w-5 text-success-600" />
+                          </div>
+                        ) : (
+                          <div className="h-8 w-8 rounded-full bg-error-100 flex items-center justify-center mr-3 flex-shrink-0">
+                            <X className="h-5 w-5 text-error-600" />
+                          </div>
+                        )}
+                        <div className="flex-1">
+                          <h4
+                            className={
+                              feedback === "correct"
+                                ? "font-bold text-success-700 text-lg"
+                                : "font-bold text-error-700 text-lg"
+                            }
+                          >
+                            {feedback === "correct" ? "Correct!" : "Incorrect"}
+                          </h4>
+                          <p
+                            className={
+                              feedback === "correct"
+                                ? "text-success-700 mt-1"
+                                : "text-error-700 mt-1"
+                            }
+                          >
+                            {feedback === "correct"
+                              ? "Great job solving this problem!"
+                              : `The correct answer is ${currentProblem.solution}.`}
+                          </p>
+
+                          {feedback === "incorrect" && (
+                            <motion.div
+                              initial={{ opacity: 0, height: 0 }}
+                              animate={{ opacity: 1, height: "auto" }}
+                              transition={{ delay: 0.2, duration: 0.3 }}
+                              className="mt-3"
+                            >
+                              <div className="p-3 bg-white rounded-md border border-gray-200 shadow-sm">
+                                <div className="flex items-center mb-2">
+                                  <BookOpen className="h-4 w-4 text-primary-500 mr-2 flex-shrink-0" />
+                                  <h5 className="font-medium text-gray-800 truncate">
+                                    Solution Approach
+                                  </h5>
+                                </div>
+                                <ol className="text-sm list-decimal pl-5 space-y-2">
+                                  {currentProblem.hints.map((hint, index) => (
+                                    <li key={index} className="text-gray-700">
+                                      {hint}
+                                    </li>
+                                  ))}
+                                </ol>
+                              </div>
+                            </motion.div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </CardContent>
+            <CardFooter className="flex flex-wrap justify-between gap-y-2">
+              <div className="flex flex-wrap items-center text-sm text-gray-600 gap-y-2">
+                <span className="mr-4">
+                  Score: {results.correct}/{results.total}
+                </span>
+                <div className="flex items-center flex-wrap gap-y-1">
+                  <span className="mr-2">Progress:</span>
+                  <div className="w-24 h-2 bg-gray-200 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-secondary-500 rounded-full"
+                      style={{
+                        width: `${(currentProblemIndex / problems.length) * 100}%`,
+                      }}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <Button
+                onClick={checkAnswer}
+                disabled={!userAnswer.trim() || feedback !== null}
+                className="flex items-center"
+              >
+                Check Answer
+                <ChevronRight className="h-4 w-4 ml-2" />
+              </Button>
+            </CardFooter>
+          </Card>
         </div>
       </div>
 
-      <Card className="flex-grow mb-4">
-        <CardHeader>
-          <CardTitle className="flex items-center">
-            <span
-              className={`inline-flex items-center justify-center w-6 h-6 rounded-full mr-2 text-xs ${getDifficultyColor(currentProblem.difficulty)}`}
-            >
-              {currentProblemIndex + 1}
-            </span>
-            <span className="text-lg">{currentProblem.topic}</span>
-            <span className="ml-auto text-sm bg-gray-100 px-2 py-1 rounded">
-              {currentProblem.difficulty}
-            </span>
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="p-4 bg-gray-50 rounded-md">
-            <p className="text-lg font-medium">{currentProblem.question}</p>
+      {/* Teacher sidebar - fixed position */}
+      <div className="teacher-sidebar-container hidden md:block fixed right-0 top-0 bottom-0 z-10 w-[260px] lg:w-[300px] bg-white border-l border-gray-200 p-4 overflow-y-auto">
+        <div className="flex flex-col h-full">
+          <div className="flex-shrink-0">
+            <div className="aspect-video bg-gray-100 rounded-lg overflow-hidden mb-4 relative shadow-sm">
+              <img
+                src="https://api.dicebear.com/7.x/avataaars/svg?seed=mathkong&accessories=eyeglasses"
+                alt="AI Teacher"
+                className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-32"
+              />
+              <div className="absolute bottom-2 right-2 bg-red-500 text-white text-xs px-1.5 py-0.5 rounded-full">
+                LIVE
+              </div>
+            </div>
+            <h3 className="font-medium text-center mb-1">Ms. Kong</h3>
+            <p className="text-xs text-gray-500 text-center mb-4">
+              Math Teacher
+            </p>
           </div>
 
-          <div className="space-y-2">
-            <label
-              htmlFor="answer"
-              className="block text-sm font-medium text-gray-700"
-            >
-              Your Answer:
-            </label>
-            <Input
-              id="answer"
-              value={userAnswer}
-              onChange={(e) => {
-                setUserAnswer(e.target.value);
-                setLastActivityTime(Date.now());
-                setStudentState("typing");
-              }}
-              onFocus={() => {
-                setLastActivityTime(Date.now());
-                setStudentState("typing");
-              }}
-              placeholder="Enter your answer here"
-              className="w-full"
-              disabled={feedback !== null}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <label
-              htmlFor="workingArea"
-              className="block text-sm font-medium text-gray-700 flex items-center"
-            >
-              Working Area{" "}
-              <span className="text-xs text-gray-500 ml-2">(optional)</span>
-            </label>
-            <Textarea
-              id="workingArea"
-              value={workingArea}
-              onChange={(e) => {
-                setWorkingArea(e.target.value);
-                setLastActivityTime(Date.now());
-                setStudentState("typing");
-              }}
-              onFocus={() => {
-                setLastActivityTime(Date.now());
-                setStudentState("typing");
-              }}
-              placeholder="Show your work here..."
-              className="w-full h-32"
-            />
-          </div>
-
-          {showHint && (
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="p-3 bg-warning-50 border border-warning-200 rounded-md shadow-soft"
-            >
-              <div className="flex items-start">
-                <Lightbulb className="h-5 w-5 text-warning-500 mr-2 mt-0.5" />
-                <div>
-                  <p className="font-medium text-warning-800 text-sm">
-                    Hint {currentHintIndex + 1}:
-                  </p>
-                  <p className="text-warning-700">
-                    {currentProblem.hints[currentHintIndex]}
-                  </p>
+          {/* AI Prompt - always visible in sidebar */}
+          <AnimatePresence>
+            {showAiPrompt && aiPrompt && (
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                className="mb-4"
+              >
+                <div className="p-3 bg-secondary-50 border-l-4 border-secondary-300 rounded-md shadow-sm">
+                  <p className="text-sm">{aiPrompt}</p>
                 </div>
-              </div>
-            </motion.div>
-          )}
+              </motion.div>
+            )}
+          </AnimatePresence>
 
-          {feedback && (
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              className={`p-3 rounded-md shadow-soft ${feedback === "correct" ? "bg-success-50 border border-success-200" : "bg-error-50 border border-error-200"}`}
-            >
-              <div className="flex items-center">
-                {feedback === "correct" ? (
-                  <Check className="h-5 w-5 text-success-500 mr-2" />
-                ) : (
-                  <X className="h-5 w-5 text-error-500 mr-2" />
-                )}
-                <p
-                  className={
-                    feedback === "correct"
-                      ? "text-success-700"
-                      : "text-error-700"
-                  }
-                >
-                  {feedback === "correct"
-                    ? "Correct! Great job!"
-                    : `Incorrect. The correct answer is ${currentProblem.solution}.`}
-                </p>
-              </div>
-            </motion.div>
-          )}
-        </CardContent>
-        <CardFooter className="flex justify-between">
-          <Button
-            variant="outline"
-            onClick={showNextHint}
-            disabled={
-              showHint && currentHintIndex >= currentProblem.hints.length - 1
-            }
-            className="flex items-center"
-          >
-            <HelpCircle className="h-4 w-4 mr-2" />
-            {!showHint ? "Show Hint" : "Next Hint"}
-          </Button>
-
-          <Button
-            onClick={checkAnswer}
-            disabled={!userAnswer.trim() || feedback !== null}
-            className="flex items-center"
-          >
-            Check Answer
-            <ChevronRight className="h-4 w-4 ml-2" />
-          </Button>
-        </CardFooter>
-      </Card>
-
-      <div className="flex justify-between items-center text-sm text-gray-600">
-        <div>
-          Score: {results.correct}/{results.total}
-        </div>
-        <div className="flex items-center">
-          <span className="mr-2">Progress:</span>
-          <div className="w-32 h-2 bg-gray-200 rounded-full overflow-hidden">
-            <div
-              className="h-full bg-secondary-500 rounded-full animate-pulse-gentle"
-              style={{
-                width: `${(currentProblemIndex / problems.length) * 100}%`,
+          {/* Question Interface */}
+          <div className="mt-auto border-t border-gray-200 pt-4">
+            <h3 className="text-sm font-medium mb-2 flex items-center">
+              <HelpCircle className="h-4 w-4 mr-2 text-primary-500 flex-shrink-0" />
+              <span className="truncate">Ask a Question</span>
+            </h3>
+            <div className="flex mb-2 w-full">
+              <Input
+                placeholder="Type your question here..."
+                className="flex-grow rounded-r-none border-r-0 text-sm min-w-0"
+                value={questionInput}
+                onChange={(e) => setQuestionInput(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleAskQuestion()}
+              />
+              <Button
+                variant="default"
+                size="icon"
+                className="rounded-l-none rounded-r-md flex-shrink-0 h-10 w-10"
+                onClick={handleAskQuestion}
+              >
+                <ChevronRight size={16} />
+              </Button>
+            </div>
+            <Button
+              variant="secondary"
+              className="w-full"
+              onClick={() => {
+                setAiPrompt(
+                  "I'm listening to your question. Please speak clearly...",
+                );
+                setShowAiPrompt(true);
+                setTimeout(() => {
+                  setAiPrompt(
+                    "I heard you asking about the problem. Let me help: " +
+                      currentProblem.hints[0],
+                  );
+                  setTimeout(() => setShowAiPrompt(false), 6000);
+                }, 2000);
               }}
-            />
+            >
+              <Mic className="h-4 w-4 mr-2" />
+              Ask with Voice
+            </Button>
           </div>
         </div>
       </div>

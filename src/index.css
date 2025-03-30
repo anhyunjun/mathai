@@ -355,23 +355,22 @@
     display: flex;
     flex-direction: column;
     flex-shrink: 0;
-    position: fixed;
+    position: absolute;
     right: 0;
     top: 0;
     bottom: 0;
-    z-index: 30;
+    z-index: 10;
     overflow: hidden;
-    padding-top: 60px; /* Account for the tab header */
+    padding: 16px;
   }
 
   /* Responsive adjustments for different screen sizes */
-  @media (min-width: 768px) {
+  @media (max-width: 1023px) {
     .teacher-sidebar-container {
-      position: absolute;
-      padding-top: 0;
-      top: 0;
-      bottom: 0;
-      z-index: 10;
+      width: 280px;
+      min-width: 280px;
+      max-width: 280px;
+      padding: 12px;
     }
   }
 
@@ -388,6 +387,7 @@
       max-width: 240px;
       border-top-left-radius: 1rem;
       box-shadow: -4px 0 10px rgba(0, 0, 0, 0.1);
+      padding: 8px;
     }
   }
 
@@ -402,6 +402,7 @@
       width: 200px;
       min-width: 200px;
       max-width: 200px;
+      padding: 6px;
     }
   }
 }

@@ -382,7 +382,7 @@ const AITeacherVideo = ({
   // FaceTime-style container classes with responsive dimensions and fixed aspect ratio
   const containerClasses = isMinimized
     ? "fixed bottom-4 right-4 w-[220px] h-auto bg-[#111827] rounded-2xl shadow-xl z-50 overflow-hidden transition-all duration-300 ease-in-out hover:scale-105 aspect-[9/16]"
-    : "bg-[#111827] rounded-2xl overflow-hidden transition-all duration-300 ease-in-out teacher-container";
+    : "bg-[#111827] rounded-2xl overflow-hidden transition-all duration-300 ease-in-out w-full h-full max-w-[280px] max-h-[500px] aspect-[9/16]";
 
   return (
     <div className={containerClasses}>
