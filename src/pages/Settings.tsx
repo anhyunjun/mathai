@@ -24,7 +24,7 @@ const Settings = () => {
           <h1 className="text-3xl font-bold mb-6">Settings</h1>
 
           <Tabs defaultValue="profile" className="w-full">
-            <TabsList className="grid w-full grid-cols-4 mb-8">
+            <TabsList className="grid w-full grid-cols-5 mb-8">
               <TabsTrigger value="profile" className="flex items-center gap-2">
                 <User className="h-4 w-4" />
                 Profile
@@ -46,6 +46,13 @@ const Settings = () => {
               >
                 <Clock className="h-4 w-4" />
                 Preferences
+              </TabsTrigger>
+              <TabsTrigger
+                value="ai-teacher"
+                className="flex items-center gap-2"
+              >
+                <Volume2 className="h-4 w-4" />
+                AI Teacher
               </TabsTrigger>
             </TabsList>
 
@@ -248,6 +255,191 @@ const Settings = () => {
                         </p>
                       </div>
                       <Switch defaultChecked />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="ai-teacher" className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <div className="bg-gradient-to-r from-purple-400 to-pink-500 p-1.5 rounded-md">
+                      <Volume2 className="h-5 w-5 text-white" />
+                    </div>
+                    AI Teacher Customization
+                    <span className="ml-2 text-xs bg-gradient-to-r from-purple-400 to-pink-500 text-white px-2 py-0.5 rounded-full">
+                      Premium Feature
+                    </span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-6">
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className="bg-purple-100 p-2 rounded-full">
+                        <Bell className="h-4 w-4 text-purple-600" />
+                      </div>
+                      <p className="text-sm text-gray-700">
+                        Upgrade to Premium to customize your AI teacher's
+                        appearance and voice.
+                      </p>
+                    </div>
+                    <Button className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 w-full">
+                      Upgrade to Premium
+                    </Button>
+                  </div>
+
+                  <div className="space-y-6 opacity-70 pointer-events-none">
+                    <div>
+                      <h3 className="text-lg font-medium mb-4">
+                        Teacher Appearance
+                      </h3>
+                      <div className="grid grid-cols-4 gap-4">
+                        {[1, 2, 3, 4].map((i) => (
+                          <div
+                            key={i}
+                            className={`border-2 rounded-lg p-2 text-center ${i === 1 ? "border-blue-500" : "border-gray-200"}`}
+                          >
+                            <div className="w-full aspect-square rounded-lg overflow-hidden mb-2">
+                              <img
+                                src={`https://api.dicebear.com/7.x/avataaars/svg?seed=teacher${i}`}
+                                alt={`Teacher ${i}`}
+                                className="w-full h-full object-cover"
+                              />
+                            </div>
+                            <p className="text-sm font-medium">
+                              {i === 1 ? "Ms. Kong" : `Teacher ${i}`}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                      <Button variant="outline" className="mt-4 w-full">
+                        Create Custom Avatar
+                      </Button>
+                    </div>
+
+                    <div className="pt-4 border-t border-gray-200">
+                      <h3 className="text-lg font-medium mb-4">
+                        Voice Settings
+                      </h3>
+                      <div className="space-y-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="voice-type">Voice Type</Label>
+                          <select
+                            id="voice-type"
+                            className="w-full rounded-md border border-gray-300 p-2"
+                          >
+                            <option>Female (Default)</option>
+                            <option>Male</option>
+                            <option>Neutral</option>
+                          </select>
+                        </div>
+
+                        <div className="space-y-2">
+                          <div className="flex justify-between">
+                            <Label htmlFor="voice-pitch">Pitch</Label>
+                            <span className="text-sm text-gray-500">
+                              Medium
+                            </span>
+                          </div>
+                          <input
+                            type="range"
+                            id="voice-pitch"
+                            min="1"
+                            max="10"
+                            defaultValue="5"
+                            className="w-full"
+                          />
+                        </div>
+
+                        <div className="space-y-2">
+                          <div className="flex justify-between">
+                            <Label htmlFor="voice-speed">Speaking Rate</Label>
+                            <span className="text-sm text-gray-500">
+                              Normal
+                            </span>
+                          </div>
+                          <input
+                            type="range"
+                            id="voice-speed"
+                            min="1"
+                            max="10"
+                            defaultValue="5"
+                            className="w-full"
+                          />
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label htmlFor="accent">Accent</Label>
+                          <select
+                            id="accent"
+                            className="w-full rounded-md border border-gray-300 p-2"
+                          >
+                            <option>American (Default)</option>
+                            <option>British</option>
+                            <option>Australian</option>
+                            <option>Indian</option>
+                          </select>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="pt-4 border-t border-gray-200">
+                      <h3 className="text-lg font-medium mb-4">
+                        Teaching Style
+                      </h3>
+                      <div className="space-y-4">
+                        <div className="flex items-center justify-between">
+                          <div className="space-y-0.5">
+                            <h4 className="font-medium">Encouragement Level</h4>
+                            <p className="text-sm text-gray-500">
+                              How often your teacher provides positive
+                              reinforcement
+                            </p>
+                          </div>
+                          <select className="rounded-md border border-gray-300 p-2">
+                            <option>Low</option>
+                            <option selected>Medium</option>
+                            <option>High</option>
+                          </select>
+                        </div>
+
+                        <div className="flex items-center justify-between">
+                          <div className="space-y-0.5">
+                            <h4 className="font-medium">Explanation Detail</h4>
+                            <p className="text-sm text-gray-500">
+                              Level of detail in explanations
+                            </p>
+                          </div>
+                          <select className="rounded-md border border-gray-300 p-2">
+                            <option>Brief</option>
+                            <option selected>Detailed</option>
+                            <option>Very Detailed</option>
+                          </select>
+                        </div>
+
+                        <div className="flex items-center justify-between">
+                          <div className="space-y-0.5">
+                            <h4 className="font-medium">
+                              Proactive Assistance
+                            </h4>
+                            <p className="text-sm text-gray-500">
+                              How often your teacher offers help without being
+                              asked
+                            </p>
+                          </div>
+                          <select className="rounded-md border border-gray-300 p-2">
+                            <option>Minimal</option>
+                            <option>Moderate</option>
+                            <option selected>Frequent</option>
+                          </select>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex justify-end pt-4">
+                      <Button disabled>Save Customizations</Button>
                     </div>
                   </div>
                 </CardContent>

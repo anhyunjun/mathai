@@ -15,7 +15,10 @@ import {
   Minimize2,
   Volume2,
   VolumeX,
+  AlertCircle,
+  MessageSquare,
 } from "lucide-react";
+import { callGptApi, type ChatMessage } from "@/lib/utils";
 
 interface AITeacherVideoProps {
   teacherName?: string;
@@ -24,6 +27,11 @@ interface AITeacherVideoProps {
   videoSrc?: string;
   avatarSrc?: string;
   isMuted?: boolean;
+  onMessage?: (message: string) => void;
+  initialPrompt?: string;
+  subject?: string;
+  enableSpeech?: boolean;
+  enableVoiceInput?: boolean;
 }
 
 const AITeacherVideo = ({
@@ -33,11 +41,216 @@ const AITeacherVideo = ({
   videoSrc = "",
   avatarSrc = "https://api.dicebear.com/7.x/avataaars/svg?seed=mathkong&backgroundColor=b6e3f4",
   isMuted = false,
+  onMessage = () => {},
+  initialPrompt = "You are Ms. Kong, a friendly and enthusiastic math teacher. Introduce yourself and ask what math topic the student would like to learn about today.",
+  subject = "mathematics",
+  enableSpeech = true,
+  enableVoiceInput = true,
 }: AITeacherVideoProps) => {
   const [localMuted, setLocalMuted] = useState(isMuted);
   const [videoEnabled, setVideoEnabled] = useState(true);
   const [micEnabled, setMicEnabled] = useState(true);
+  const [isListening, setIsListening] = useState(false);
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [messages, setMessages] = useState<ChatMessage[]>([
+    {
+      role: "system",
+      content: `You are ${teacherName}, an AI math teacher specializing in ${subject} for K-12 students. You are enthusiastic, encouraging, and explain concepts in simple terms. Keep responses concise (under 100 words) and engaging for young students.`,
+    },
+  ]);
+  const [currentMessage, setCurrentMessage] = useState<string>("");
+  const [transcript, setTranscript] = useState<string>("");
   const videoRef = useRef<HTMLVideoElement>(null);
+  const speechRecognitionRef = useRef<SpeechRecognition | null>(null);
+  const speechSynthesisRef = useRef<SpeechSynthesisUtterance | null>(null);
+
+  // Initialize speech recognition
+  useEffect(() => {
+    if (enableVoiceInput && "webkitSpeechRecognition" in window) {
+      const SpeechRecognition =
+        window.webkitSpeechRecognition || window.SpeechRecognition;
+      speechRecognitionRef.current = new SpeechRecognition();
+      speechRecognitionRef.current.continuous = false;
+      speechRecognitionRef.current.interimResults = false;
+      speechRecognitionRef.current.lang = "en-US";
+
+      speechRecognitionRef.current.onresult = (event) => {
+        const userInput = event.results[0][0].transcript;
+        setTranscript(userInput);
+        handleSendMessage(userInput);
+      };
+
+      speechRecognitionRef.current.onerror = (event) => {
+        console.error("Speech recognition error", event.error);
+        setIsListening(false);
+        setError(`Speech recognition error: ${event.error}`);
+        setTimeout(() => setError(null), 5000);
+      };
+
+      speechRecognitionRef.current.onend = () => {
+        setIsListening(false);
+      };
+    } else if (enableVoiceInput) {
+      setError("Speech recognition is not supported in this browser");
+      setTimeout(() => setError(null), 5000);
+    }
+
+    return () => {
+      if (speechRecognitionRef.current) {
+        speechRecognitionRef.current.abort();
+      }
+    };
+  }, [enableVoiceInput]);
+
+  // Function to start listening for speech
+  const startListening = () => {
+    if (speechRecognitionRef.current && !isListening) {
+      setTranscript("");
+      setIsListening(true);
+      speechRecognitionRef.current.start();
+    }
+  };
+
+  // Function to stop listening for speech
+  const stopListening = () => {
+    if (speechRecognitionRef.current && isListening) {
+      speechRecognitionRef.current.stop();
+      setIsListening(false);
+    }
+  };
+
+  // Function to speak text using speech synthesis
+  const speakText = (text: string) => {
+    if (enableSpeech && "speechSynthesis" in window) {
+      // Cancel any ongoing speech
+      window.speechSynthesis.cancel();
+
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.rate = 1.0;
+      utterance.pitch = 1.0;
+      utterance.volume = 1.0;
+
+      // Try to find a female voice
+      const voices = window.speechSynthesis.getVoices();
+      const femaleVoice = voices.find(
+        (voice) =>
+          voice.name.includes("female") ||
+          voice.name.includes("woman") ||
+          voice.name.includes("girl"),
+      );
+
+      if (femaleVoice) {
+        utterance.voice = femaleVoice;
+      }
+
+      utterance.onstart = () => {
+        setIsSpeaking(true);
+      };
+
+      utterance.onend = () => {
+        setIsSpeaking(false);
+      };
+
+      utterance.onerror = (event) => {
+        console.error("Speech synthesis error", event);
+        setIsSpeaking(false);
+      };
+
+      speechSynthesisRef.current = utterance;
+      window.speechSynthesis.speak(utterance);
+    }
+  };
+
+  // Function to handle sending a message to the GPT API
+  const handleSendMessage = async (userMessage?: string) => {
+    try {
+      setIsLoading(true);
+      setError(null);
+
+      // If this is the first message, use the initial prompt
+      const newMessages = [...messages];
+
+      if (userMessage) {
+        newMessages.push({
+          role: "user",
+          content: userMessage,
+        });
+      } else if (messages.length === 1) {
+        // Only system message exists, add the initial prompt
+        newMessages.push({
+          role: "user",
+          content: initialPrompt,
+        });
+      }
+
+      setMessages(newMessages);
+
+      const response = await callGptApi(newMessages, {
+        onError: (err) => {
+          setError(err.message);
+          setTimeout(() => setError(null), 5000);
+        },
+      });
+
+      if (response) {
+        const assistantMessage = {
+          role: "assistant" as const,
+          content: response,
+        };
+
+        setMessages([...newMessages, assistantMessage]);
+        setCurrentMessage(response);
+
+        // Pass the message to the parent component if needed
+        onMessage(response);
+
+        // Speak the response if speech is enabled
+        if (enableSpeech) {
+          speakText(response);
+        }
+
+        // Clear the message after a delay (longer to accommodate speech)
+        setTimeout(() => {
+          setCurrentMessage("");
+        }, 15000);
+      }
+    } catch (err) {
+      if (err instanceof Error) {
+        setError(err.message);
+        setTimeout(() => setError(null), 5000);
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Initialize with the first message
+  useEffect(() => {
+    if (messages.length === 1) {
+      handleSendMessage();
+    }
+
+    // Initialize speech synthesis voices
+    if (enableSpeech && "speechSynthesis" in window) {
+      // Load voices if they're not already loaded
+      if (window.speechSynthesis.getVoices().length === 0) {
+        window.speechSynthesis.onvoiceschanged = () => {
+          // Voices are now loaded
+        };
+      }
+    }
+  }, []);
+
+  // Cancel speech when component unmounts
+  useEffect(() => {
+    return () => {
+      if ("speechSynthesis" in window) {
+        window.speechSynthesis.cancel();
+      }
+    };
+  }, []);
 
   // Simulate video stream with a placeholder if no source provided
   useEffect(() => {
@@ -61,6 +274,29 @@ const AITeacherVideo = ({
         gradient.addColorStop(1, `hsl(${(Date.now() + 180) % 360}, 70%, 60%)`);
         ctx.fillStyle = gradient;
         ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // Add animation when speaking
+        if (isSpeaking) {
+          const time = Date.now() / 1000;
+          const centerX = canvas.width / 2;
+          const centerY = canvas.height / 2 + 50; // Position for mouth
+          const radius = 20 + Math.sin(time * 10) * 5; // Pulsating radius
+
+          // Draw animated mouth
+          ctx.fillStyle = "rgba(0, 0, 0, 0.5)";
+          ctx.beginPath();
+          ctx.ellipse(
+            centerX,
+            centerY,
+            radius,
+            radius / 2,
+            0,
+            0,
+            Math.PI,
+            false,
+          );
+          ctx.fill();
+        }
         requestAnimationFrame(animate);
       };
 
@@ -113,6 +349,25 @@ const AITeacherVideo = ({
               </div>
             </div>
           )}
+
+          {/* Message bubble */}
+          {currentMessage && (
+            <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white/90 px-4 py-3 rounded-lg max-w-[250px] shadow-lg">
+              <p className="text-sm text-gray-800">{currentMessage}</p>
+            </div>
+          )}
+
+          {/* Transcript bubble when listening */}
+          {isListening && (
+            <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-blue-500/90 px-4 py-2 rounded-lg max-w-[250px] shadow-lg">
+              <p className="text-xs text-white">Listening...</p>
+              {transcript && (
+                <p className="text-sm text-white font-medium mt-1">
+                  "{transcript}"
+                </p>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Bottom control bar */}
@@ -120,10 +375,28 @@ const AITeacherVideo = ({
           <Button
             variant="ghost"
             size="icon"
-            className={`rounded-full h-12 w-12 ${micEnabled ? "bg-blue-600 text-white" : "bg-gray-700 text-white"}`}
-            onClick={() => setMicEnabled(!micEnabled)}
+            className={`rounded-full h-12 w-12 ${isListening ? "bg-red-600 text-white animate-pulse" : micEnabled ? "bg-blue-600 text-white" : "bg-gray-700 text-white"}`}
+            onClick={() => {
+              if (enableVoiceInput) {
+                if (isListening) {
+                  stopListening();
+                } else if (micEnabled) {
+                  startListening();
+                } else {
+                  setMicEnabled(true);
+                }
+              } else {
+                setMicEnabled(!micEnabled);
+              }
+            }}
           >
-            {micEnabled ? <Mic size={20} /> : <MicOff size={20} />}
+            {isListening ? (
+              <Mic size={20} />
+            ) : micEnabled ? (
+              <Mic size={20} />
+            ) : (
+              <MicOff size={20} />
+            )}
           </Button>
 
           <Button
@@ -138,6 +411,16 @@ const AITeacherVideo = ({
           <Button
             variant="ghost"
             size="icon"
+            className={`rounded-full h-12 w-12 ${isSpeaking ? "bg-green-600 text-white animate-pulse" : "bg-green-600 text-white hover:bg-green-700"}`}
+            onClick={() => handleSendMessage()}
+            disabled={isLoading || isListening}
+          >
+            <MessageSquare size={20} />
+          </Button>
+
+          <Button
+            variant="ghost"
+            size="icon"
             className="rounded-full h-12 w-12 bg-red-600 text-white hover:bg-red-700"
             onClick={onToggleMinimize}
           >
@@ -147,9 +430,29 @@ const AITeacherVideo = ({
 
         {/* Bottom pill */}
         <div className="absolute bottom-20 left-1/2 transform -translate-x-1/2 bg-black/30 backdrop-blur-sm px-4 py-1 rounded-full flex items-center space-x-2">
-          <div className="w-2 h-2 rounded-full bg-blue-500"></div>
-          <span className="text-xs text-white font-medium">AI Teacher</span>
+          <div
+            className={`w-2 h-2 rounded-full ${isLoading ? "bg-yellow-500 animate-pulse" : isSpeaking ? "bg-green-500 animate-pulse" : isListening ? "bg-red-500 animate-pulse" : "bg-blue-500"}`}
+          ></div>
+          <span className="text-xs text-white font-medium">
+            {isLoading
+              ? "Thinking..."
+              : isSpeaking
+                ? "Speaking..."
+                : isListening
+                  ? "Listening..."
+                  : error
+                    ? "Error"
+                    : "AI Teacher"}
+          </span>
         </div>
+
+        {/* Error message */}
+        {error && (
+          <div className="absolute top-20 left-1/2 transform -translate-x-1/2 bg-red-500/90 px-4 py-2 rounded-md flex items-center space-x-2 max-w-[250px]">
+            <AlertCircle size={16} className="text-white" />
+            <span className="text-xs text-white">{error}</span>
+          </div>
+        )}
       </div>
     </div>
   );

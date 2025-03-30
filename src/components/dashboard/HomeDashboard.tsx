@@ -3,17 +3,11 @@ import { useNavigate } from "react-router-dom";
 import ProgressSummary from "./ProgressSummary";
 import UpcomingLessons from "./UpcomingLessons";
 import PracticeTopics from "./PracticeTopics";
+import WelcomeSection from "./WelcomeSection";
+import DashboardStats from "./DashboardStats";
+import TopicCard from "./TopicCard";
 import { Button } from "../ui/button";
-import { Card, CardContent } from "../ui/card";
-import {
-  Bell,
-  BookOpen,
-  Calendar,
-  ChevronRight,
-  Clock,
-  Sparkles,
-} from "lucide-react";
-import { Badge } from "../ui/badge";
+import { Calendar, ChevronRight } from "lucide-react";
 
 interface LessonType {
   id: string;
@@ -152,93 +146,20 @@ const HomeDashboard = ({
     <div className="w-full min-h-screen bg-gray-50 p-4 md:p-6">
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Welcome Section */}
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white p-6 rounded-xl shadow-sm">
-          <div>
-            <h1 className="text-2xl md:text-3xl font-bold text-gray-900">
-              Welcome back, {studentName}!
-            </h1>
-            <p className="text-gray-600 mt-1">
-              You're on a {streakDays}-day learning streak. Keep it up!
-            </p>
-          </div>
-
-          {hasScheduledCall && (
-            <Card className="bg-blue-50 border-blue-200 w-full md:w-auto">
-              <CardContent className="p-4 flex items-center justify-between">
-                <div className="flex items-center">
-                  <div className="bg-blue-100 p-2 rounded-full mr-3">
-                    <Bell className="h-5 w-5 text-blue-600" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-blue-800">
-                      Next AI Teacher Call
-                    </p>
-                    <p className="text-lg font-bold text-blue-900">
-                      {nextCallTime}
-                    </p>
-                  </div>
-                </div>
-                <Button
-                  size="sm"
-                  className="bg-blue-600 hover:bg-blue-700"
-                  onClick={() => navigate("/lesson")}
-                >
-                  View Details
-                </Button>
-              </CardContent>
-            </Card>
-          )}
-        </div>
+        <WelcomeSection
+          studentName={studentName}
+          streakDays={streakDays}
+          hasScheduledCall={hasScheduledCall}
+          nextCallTime={nextCallTime}
+        />
 
         {/* Quick Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Card className="bg-white shadow-sm">
-            <CardContent className="p-4 flex items-center">
-              <div className="bg-purple-100 p-3 rounded-full mr-4">
-                <BookOpen className="h-6 w-6 text-purple-600" />
-              </div>
-              <div>
-                <p className="text-sm text-gray-500">Lessons Completed</p>
-                <div className="flex items-baseline">
-                  <span className="text-2xl font-bold mr-2">
-                    {completedLessons}
-                  </span>
-                  <span className="text-sm text-gray-500">
-                    of {totalLessons}
-                  </span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-white shadow-sm">
-            <CardContent className="p-4 flex items-center">
-              <div className="bg-green-100 p-3 rounded-full mr-4">
-                <Clock className="h-6 w-6 text-green-600" />
-              </div>
-              <div>
-                <p className="text-sm text-gray-500">Minutes Learned</p>
-                <div className="flex items-baseline">
-                  <span className="text-2xl font-bold">{minutesLearned}</span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-white shadow-sm">
-            <CardContent className="p-4 flex items-center">
-              <div className="bg-amber-100 p-3 rounded-full mr-4">
-                <Sparkles className="h-6 w-6 text-amber-600" />
-              </div>
-              <div>
-                <p className="text-sm text-gray-500">Problems Solved</p>
-                <div className="flex items-baseline">
-                  <span className="text-2xl font-bold">{problemsSolved}</span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+        <DashboardStats
+          completedLessons={completedLessons}
+          totalLessons={totalLessons}
+          minutesLearned={minutesLearned}
+          problemsSolved={problemsSolved}
+        />
 
         {/* Main Dashboard Content */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -282,34 +203,19 @@ const HomeDashboard = ({
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {recommendedTopics.slice(0, 4).map((topic) => (
-              <Card
+              <TopicCard
                 key={topic.id}
-                className="cursor-pointer hover:shadow-md transition-all"
-                onClick={() => handleSelectTopic(topic.id)}
-              >
-                <CardContent className="p-4">
-                  <div className="flex justify-between items-start mb-2">
-                    <h3 className="font-semibold">{topic.title}</h3>
-                    {topic.isRecommended && (
-                      <Badge className="bg-blue-100 text-blue-700 text-xs">
-                        Recommended
-                      </Badge>
-                    )}
-                    {topic.isNew && (
-                      <Badge className="bg-green-100 text-green-700 text-xs">
-                        {topic.badgeText || "New"}
-                      </Badge>
-                    )}
-                  </div>
-                  <p className="text-sm text-gray-600 line-clamp-2 mb-3">
-                    {topic.description}
-                  </p>
-                  <div className="flex justify-between items-center text-xs text-gray-500">
-                    <span>{topic.difficulty}</span>
-                    <span>{topic.estimatedTime}</span>
-                  </div>
-                </CardContent>
-              </Card>
+                id={topic.id}
+                title={topic.title}
+                description={topic.description}
+                difficulty={topic.difficulty}
+                completionPercentage={topic.completionPercentage}
+                estimatedTime={topic.estimatedTime}
+                isRecommended={topic.isRecommended}
+                isNew={topic.isNew}
+                badgeText={topic.badgeText}
+                onClick={handleSelectTopic}
+              />
             ))}
           </div>
         </div>

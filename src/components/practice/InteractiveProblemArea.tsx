@@ -1,6 +1,16 @@
-import React, { useState } from "react";
-import { motion } from "framer-motion";
-import { Check, X, HelpCircle, ChevronRight, Lightbulb } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  Check,
+  X,
+  HelpCircle,
+  ChevronRight,
+  Lightbulb,
+  Award,
+  Star,
+  Trophy,
+  Sparkles,
+} from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -72,16 +82,105 @@ const InteractiveProblemArea: React.FC<InteractiveProblemAreaProps> = ({
   );
   const [workingArea, setWorkingArea] = useState("");
   const [results, setResults] = useState({ correct: 0, total: 0 });
+  const [showReward, setShowReward] = useState(false);
+  const [rewardType, setRewardType] = useState<
+    "correct" | "streak" | "fast" | "milestone"
+  >("correct");
+  const [aiPrompt, setAiPrompt] = useState<string | null>(null);
+  const [showAiPrompt, setShowAiPrompt] = useState(false);
+  const [streakCount, setStreakCount] = useState(0);
+  const [lastAnswerTime, setLastAnswerTime] = useState<number | null>(null);
 
   const currentProblem = problems[currentProblemIndex];
 
+  // AI prompts that appear during problem solving
+  const aiPrompts = {
+    thinking: [
+      "I see you're working on this problem. Need any help?",
+      "Take your time with this one. I'm here if you need assistance.",
+      "Remember the key concepts we discussed earlier.",
+    ],
+    encouragement: [
+      "You're doing great! Keep going!",
+      "I like your approach to this problem.",
+      "You're making excellent progress!",
+    ],
+    hint: [
+      "Have you considered using the formula we learned?",
+      "Try breaking this down into smaller steps.",
+      "Look for patterns in the problem that might help you.",
+    ],
+  };
+
+  // Show random AI prompts during problem solving
+  useEffect(() => {
+    if (feedback === null && userAnswer.length === 0) {
+      const promptTimer = setTimeout(() => {
+        const category = Math.random() > 0.5 ? "thinking" : "encouragement";
+        const randomIndex = Math.floor(
+          Math.random() * aiPrompts[category].length,
+        );
+        setAiPrompt(aiPrompts[category][randomIndex]);
+        setShowAiPrompt(true);
+
+        // Hide the prompt after some time
+        setTimeout(() => {
+          setShowAiPrompt(false);
+        }, 5000);
+      }, 8000); // Show prompt after 8 seconds of inactivity
+
+      return () => clearTimeout(promptTimer);
+    }
+  }, [currentProblemIndex, feedback, userAnswer]);
+
   const checkAnswer = () => {
+    const currentTime = Date.now();
     const isCorrect = userAnswer.trim() === currentProblem.solution.trim();
     setFeedback(isCorrect ? "correct" : "incorrect");
 
     if (isCorrect) {
+      // Update streak count
+      setStreakCount((prev) => prev + 1);
       setResults((prev) => ({ ...prev, correct: prev.correct + 1 }));
+
+      // Determine reward type
+      let reward: "correct" | "streak" | "fast" | "milestone" = "correct";
+
+      // Check for streak rewards (every 3 correct answers)
+      if (streakCount > 0 && (streakCount + 1) % 3 === 0) {
+        reward = "streak";
+      }
+      // Check for speed rewards (if answered within 20 seconds)
+      else if (lastAnswerTime && currentTime - lastAnswerTime < 20000) {
+        reward = "fast";
+      }
+      // Check for milestone rewards (25%, 50%, 75%, 100% completion)
+      else {
+        const completionPercentage =
+          ((results.correct + 1) / problems.length) * 100;
+        if (
+          completionPercentage === 25 ||
+          completionPercentage === 50 ||
+          completionPercentage === 75 ||
+          completionPercentage === 100
+        ) {
+          reward = "milestone";
+        }
+      }
+
+      setRewardType(reward);
+      setShowReward(true);
+
+      // Hide reward after a delay
+      setTimeout(() => {
+        setShowReward(false);
+      }, 2000);
+    } else {
+      // Reset streak on incorrect answer
+      setStreakCount(0);
     }
+
+    setLastAnswerTime(currentTime);
 
     // Automatically move to next problem after feedback
     setTimeout(() => {
@@ -96,7 +195,7 @@ const InteractiveProblemArea: React.FC<InteractiveProblemAreaProps> = ({
         setResults(finalResults);
         onComplete(finalResults);
       }
-    }, 1500);
+    }, 2500);
   };
 
   const showNextHint = () => {
@@ -118,12 +217,109 @@ const InteractiveProblemArea: React.FC<InteractiveProblemAreaProps> = ({
   };
 
   return (
-    <div className="w-full h-full bg-white p-4 rounded-lg shadow-md flex flex-col">
+    <div className="w-full h-full bg-white p-4 rounded-lg shadow-md flex flex-col relative">
+      {/* AI Teacher Prompt Bubble */}
+      <AnimatePresence>
+        {showAiPrompt && aiPrompt && (
+          <motion.div
+            initial={{ opacity: 0, y: 20, scale: 0.8 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.8, y: 10 }}
+            className="absolute top-4 right-4 bg-blue-100 border border-blue-200 p-3 rounded-lg max-w-xs z-10 shadow-md"
+          >
+            <div className="flex items-start gap-2">
+              <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0 border-2 border-blue-300">
+                <img
+                  src="https://api.dicebear.com/7.x/avataaars/svg?seed=mathkong&accessories=eyepatch"
+                  alt="AI Teacher"
+                  className="w-full h-full"
+                />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-blue-800">Ms. Kong</p>
+                <p className="text-sm text-blue-700">{aiPrompt}</p>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Reward Animation */}
+      <AnimatePresence>
+        {showReward && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.5 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 1.5 }}
+            className="fixed inset-0 flex items-center justify-center z-50 pointer-events-none"
+          >
+            <div className="bg-gradient-to-r from-yellow-400 via-yellow-500 to-yellow-600 p-6 rounded-xl shadow-lg text-center text-white relative overflow-hidden">
+              <motion.div
+                className="absolute inset-0 opacity-20"
+                animate={{
+                  background: [
+                    "rgba(255,255,255,0.1)",
+                    "rgba(255,255,255,0.3)",
+                    "rgba(255,255,255,0.1)",
+                  ],
+                }}
+                transition={{ repeat: Infinity, duration: 1.5 }}
+              />
+              <div className="relative z-10">
+                {rewardType === "correct" && (
+                  <>
+                    <Check className="h-12 w-12 mx-auto mb-2 text-white" />
+                    <h3 className="text-xl font-bold mb-1">Correct Answer!</h3>
+                    <p>Great job solving this problem!</p>
+                  </>
+                )}
+                {rewardType === "streak" && (
+                  <>
+                    <Sparkles className="h-12 w-12 mx-auto mb-2 text-white" />
+                    <h3 className="text-xl font-bold mb-1">Awesome Streak!</h3>
+                    <p>You've solved {streakCount + 1} problems in a row!</p>
+                  </>
+                )}
+                {rewardType === "fast" && (
+                  <>
+                    <Star className="h-12 w-12 mx-auto mb-2 text-white" />
+                    <h3 className="text-xl font-bold mb-1">Lightning Fast!</h3>
+                    <p>Impressive speed solving this problem!</p>
+                  </>
+                )}
+                {rewardType === "milestone" && (
+                  <>
+                    <Trophy className="h-12 w-12 mx-auto mb-2 text-white" />
+                    <h3 className="text-xl font-bold mb-1">
+                      Achievement Unlocked!
+                    </h3>
+                    <p>You've reached a new milestone!</p>
+                  </>
+                )}
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <div className="flex justify-between items-center mb-4">
-        <h2 className="text-xl font-bold text-gray-800">
-          {currentLesson} - Practice
-        </h2>
-        <div className="text-sm text-gray-600">
+        <div className="flex items-center">
+          <div className="w-8 h-8 rounded-full overflow-hidden mr-3 border-2 border-blue-300">
+            <img
+              src="https://api.dicebear.com/7.x/avataaars/svg?seed=mathkong&accessories=eyepatch"
+              alt="AI Teacher"
+              className="w-full h-full"
+            />
+          </div>
+          <h2 className="text-xl font-bold text-gray-800">
+            {currentLesson} - Practice
+          </h2>
+        </div>
+        <div className="text-sm text-gray-600 flex items-center">
+          <div className="mr-3 bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs font-medium flex items-center">
+            <Award className="h-3 w-3 mr-1" />
+            Streak: {streakCount}
+          </div>
           Problem {currentProblemIndex + 1} of {problems.length}
         </div>
       </div>
