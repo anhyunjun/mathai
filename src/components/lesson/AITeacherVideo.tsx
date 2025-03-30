@@ -379,10 +379,10 @@ const AITeacherVideo = ({
     }
   }, [videoSrc]);
 
-  // FaceTime-style container classes with fixed dimensions and aspect ratio
+  // FaceTime-style container classes with responsive dimensions and fixed aspect ratio
   const containerClasses = isMinimized
-    ? "fixed bottom-4 right-4 w-[300px] h-[500px] bg-[#111827] rounded-2xl shadow-xl z-50 overflow-hidden transition-all duration-300 ease-in-out hover:scale-105"
-    : "w-[300px] h-[500px] bg-[#111827] rounded-2xl shadow-xl overflow-hidden transition-all duration-300 ease-in-out teacher-container aspect-[3/5] max-h-[500px] flex-shrink-0";
+    ? "fixed bottom-4 right-4 w-[220px] h-auto bg-[#111827] rounded-2xl shadow-xl z-50 overflow-hidden transition-all duration-300 ease-in-out hover:scale-105 aspect-[9/16]"
+    : "bg-[#111827] rounded-2xl overflow-hidden transition-all duration-300 ease-in-out teacher-container";
 
   return (
     <div className={containerClasses}>

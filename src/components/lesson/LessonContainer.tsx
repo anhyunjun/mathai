@@ -362,7 +362,7 @@ const LessonContainer: React.FC<LessonContainerProps> = ({
     <m.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="w-full h-full bg-background flex flex-col overflow-hidden relative"
+      className="w-full h-full bg-background flex flex-col overflow-hidden relative lesson-container"
     >
       {/* Main content area with tabs */}
       <div className="flex-grow flex flex-col overflow-hidden">
@@ -398,7 +398,7 @@ const LessonContainer: React.FC<LessonContainerProps> = ({
 
             {/* Teacher video when minimized */}
             {isVideoMinimized && (
-              <div className="ml-auto">
+              <div className="ml-auto z-50">
                 <AITeacherVideo
                   teacherName={teacherName}
                   isMinimized={true}
@@ -414,7 +414,7 @@ const LessonContainer: React.FC<LessonContainerProps> = ({
 
           <div className="flex-grow overflow-hidden">
             <TabsContent value="lesson" className="h-full flex">
-              <div className="flex-grow overflow-hidden relative">
+              <div className="flex-grow overflow-hidden relative md:pr-[300px] lg:pr-[320px]">
                 <LessonContent
                   title={lessonTitle}
                   description={lessonDescription}
@@ -426,10 +426,10 @@ const LessonContainer: React.FC<LessonContainerProps> = ({
                   chatHistory={chatHistory}
                 />
 
-                {/* Floating question indicator */}
+                {/* Floating question indicator - positioned differently based on screen size */}
                 {chatHistory.length > 0 && activeTab !== "chat" && (
                   <div
-                    className="absolute bottom-4 right-4 bg-primary text-white rounded-full p-2 shadow-lg cursor-pointer hover:bg-primary-600 transition-all"
+                    className="absolute bottom-4 right-4 md:right-[320px] lg:right-[340px] bg-primary text-white rounded-full p-2 shadow-lg cursor-pointer hover:bg-primary-600 transition-all z-20"
                     onClick={() => setActiveTab("chat")}
                   >
                     <div className="relative">
@@ -447,7 +447,7 @@ const LessonContainer: React.FC<LessonContainerProps> = ({
               </div>
 
               {!isVideoMinimized && (
-                <div className="w-[300px] min-w-[300px] h-full border-l border-primary-100 flex flex-col bg-primary-50 teacher-sidebar">
+                <div className="teacher-sidebar-container">
                   <div className="flex-grow flex items-center justify-center">
                     <AITeacherVideo
                       teacherName={teacherName}
