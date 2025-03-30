@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { motion as m } from "framer-motion";
 import AITeacherVideo from "./AITeacherVideo";
 import LessonContent from "./LessonContent";
@@ -24,7 +24,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { BookOpen, MessageSquare, Award, X } from "lucide-react";
+import { BookOpen, MessageSquare, Award, X, Mic } from "lucide-react";
 
 interface LessonContainerProps {
   teacherName?: string;
@@ -63,6 +63,9 @@ const LessonContainer: React.FC<LessonContainerProps> = ({
   const [showHelpDialog, setShowHelpDialog] = useState(false);
   const [currentLessonSlide, setCurrentLessonSlide] = useState(currentSlide);
   const [chatMessage, setChatMessage] = useState("");
+  const [isListening, setIsListening] = useState(false);
+  const [transcript, setTranscript] = useState("");
+  const speechRecognitionRef = useRef<SpeechRecognition | null>(null);
   const [chatHistory, setChatHistory] = useState<
     {
       sender: string;
@@ -103,6 +106,67 @@ const LessonContainer: React.FC<LessonContainerProps> = ({
       "That's exactly right! Your problem-solving skills are excellent.",
       "You've made incredible progress in understanding quadratic equations!",
     ],
+  };
+
+  // Initialize speech recognition
+  useEffect(() => {
+    if ("webkitSpeechRecognition" in window) {
+      const SpeechRecognition =
+        window.webkitSpeechRecognition || window.SpeechRecognition;
+      speechRecognitionRef.current = new SpeechRecognition();
+      speechRecognitionRef.current.continuous = false;
+      speechRecognitionRef.current.interimResults = false;
+      speechRecognitionRef.current.lang = "en-US";
+
+      speechRecognitionRef.current.onresult = (event) => {
+        const userInput = event.results[0][0].transcript;
+        setTranscript(userInput);
+        // Use the transcript as a chat message
+        if (userInput.trim()) {
+          const newMessage = {
+            sender: "You",
+            message: userInput,
+            timestamp: new Date().toLocaleTimeString(),
+          };
+
+          setChatHistory([...chatHistory, newMessage]);
+
+          // Simulate AI response after a short delay
+          setTimeout(() => {
+            const aiResponse = {
+              sender: "AI",
+              message: `I understand your question about "${userInput}". Let me explain...`,
+              timestamp: new Date().toLocaleTimeString(),
+            };
+            setChatHistory((prev) => [...prev, aiResponse]);
+          }, 1000);
+        }
+      };
+
+      speechRecognitionRef.current.onerror = (event) => {
+        console.error("Speech recognition error", event.error);
+        setIsListening(false);
+      };
+
+      speechRecognitionRef.current.onend = () => {
+        setIsListening(false);
+      };
+    }
+
+    return () => {
+      if (speechRecognitionRef.current) {
+        speechRecognitionRef.current.abort();
+      }
+    };
+  }, [chatHistory]);
+
+  // Function to start listening for speech
+  const startListening = () => {
+    if (speechRecognitionRef.current && !isListening) {
+      setTranscript("");
+      setIsListening(true);
+      speechRecognitionRef.current.start();
+    }
   };
 
   // Handle fullscreen toggle
@@ -359,22 +423,54 @@ const LessonContainer: React.FC<LessonContainerProps> = ({
                   onNextSlide={handleNextSlide}
                   onPrevSlide={handlePrevSlide}
                   lessonType={lessonType}
+                  chatHistory={chatHistory}
                 />
               </div>
 
               {!isVideoMinimized && (
-                <div className="w-[300px] min-w-[300px] h-full border-l border-primary-100 flex items-center justify-center bg-primary-50">
-                  <div className="flex items-center justify-center">
+                <div className="w-[300px] min-w-[300px] h-full border-l border-primary-100 flex flex-col bg-primary-50 teacher-sidebar">
+                  <div className="flex-grow flex items-center justify-center">
                     <AITeacherVideo
                       teacherName={teacherName}
                       isMinimized={false}
                       onToggleMinimize={() => setIsVideoMinimized(true)}
                       isMuted={isMuted}
-                      avatarSrc="https://api.dicebear.com/7.x/avataaars/svg?seed=mathkong&accessories=eyepatch"
+                      avatarSrc="https://api.dicebear.com/7.x/avataaars/svg?seed=mathkong&accessories=eyeglasses"
                       observationStatus={teacherObservationStatus}
                       studentActivity={studentActivity}
                       timeSpentOnProblem={timeSpentOnCurrentProblem}
                     />
+                  </div>
+
+                  {/* Question Interface */}
+                  <div className="p-4 border-t border-primary-100">
+                    <h3 className="text-sm font-medium mb-2">Ask a Question</h3>
+                    <div className="flex mb-2">
+                      <input
+                        type="text"
+                        placeholder="Type your question here..."
+                        className="flex-grow p-2 text-sm rounded-l-md border border-r-0 border-gray-300 focus:outline-none focus:ring-1 focus:ring-primary"
+                        value={chatMessage}
+                        onChange={(e) => setChatMessage(e.target.value)}
+                        onKeyDown={(e) =>
+                          e.key === "Enter" && handleSendMessage()
+                        }
+                      />
+                      <button
+                        className="bg-primary text-white p-2 rounded-r-md hover:bg-primary-600"
+                        onClick={handleSendMessage}
+                      >
+                        <MessageSquare size={16} />
+                      </button>
+                    </div>
+                    <button
+                      className="w-full flex items-center justify-center gap-2 bg-blue-500 text-white p-2 rounded-md hover:bg-blue-600"
+                      onClick={startListening}
+                      disabled={isListening}
+                    >
+                      <Mic size={16} />
+                      {isListening ? "Listening..." : "Ask with Voice"}
+                    </button>
                   </div>
                 </div>
               )}

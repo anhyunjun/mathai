@@ -382,7 +382,7 @@ const AITeacherVideo = ({
   // FaceTime-style container classes with fixed dimensions and aspect ratio
   const containerClasses = isMinimized
     ? "fixed bottom-4 right-4 w-[300px] h-[500px] bg-[#111827] rounded-2xl shadow-xl z-50 overflow-hidden transition-all duration-300 ease-in-out hover:scale-105"
-    : "w-[300px] h-[500px] bg-[#111827] rounded-2xl shadow-xl overflow-hidden transition-all duration-300 ease-in-out";
+    : "w-[300px] h-[500px] bg-[#111827] rounded-2xl shadow-xl overflow-hidden transition-all duration-300 ease-in-out teacher-container";
 
   return (
     <div className={containerClasses}>
@@ -402,7 +402,7 @@ const AITeacherVideo = ({
           </div>
         </div>
 
-        {/* Main video area - with pirate emoji style avatar like in the image */}
+        {/* Main video area - with math teacher character */}
         <div className="flex-grow flex items-center justify-center bg-[#1F2937] relative">
           {videoEnabled ? (
             <video
@@ -415,14 +415,32 @@ const AITeacherVideo = ({
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center bg-[#1F2937]">
-              <div className="w-64 h-64 rounded-full bg-yellow-400 border-4 border-pink-500 relative flex items-center justify-center">
-                {/* Pirate eye patch */}
-                <div className="absolute w-32 h-10 bg-gray-900 rotate-[30deg] top-16 left-4"></div>
-                <div className="absolute w-10 h-10 rounded-full bg-gray-900 top-12 left-12"></div>
-                {/* Eye */}
-                <div className="absolute w-8 h-8 rounded-full bg-gray-900 top-20 right-20"></div>
-                {/* Mouth */}
-                <div className="absolute w-20 h-10 rounded-t-full bg-gray-900 bottom-16 left-1/2 transform -translate-x-1/2 rotate-180"></div>
+              <div className="w-64 h-64 rounded-full bg-purple-500 relative flex items-center justify-center">
+                {/* Math Teacher Character */}
+                <div className="absolute w-full h-full rounded-full bg-yellow-400 border-4 border-purple-600 overflow-hidden flex items-center justify-center">
+                  {/* Glasses */}
+                  <div className="absolute w-48 h-12 border-4 border-gray-800 rounded-full top-20"></div>
+                  <div className="absolute w-20 h-20 border-4 border-gray-800 rounded-full top-16 left-12"></div>
+                  <div className="absolute w-20 h-20 border-4 border-gray-800 rounded-full top-16 right-12"></div>
+                  {/* Eyes */}
+                  <div className="absolute w-8 h-8 rounded-full bg-gray-900 top-20 left-16"></div>
+                  <div className="absolute w-8 h-8 rounded-full bg-gray-900 top-20 right-16"></div>
+                  {/* Smile */}
+                  <div className="absolute w-32 h-16 border-b-4 border-gray-800 rounded-b-full bottom-20 left-1/2 transform -translate-x-1/2"></div>
+                  {/* Math symbols */}
+                  <div className="absolute top-2 left-12 text-2xl font-bold text-purple-700">
+                    +
+                  </div>
+                  <div className="absolute top-2 right-12 text-2xl font-bold text-purple-700">
+                    ÷
+                  </div>
+                  <div className="absolute bottom-10 left-12 text-2xl font-bold text-purple-700">
+                    ×
+                  </div>
+                  <div className="absolute bottom-10 right-12 text-2xl font-bold text-purple-700">
+                    −
+                  </div>
+                </div>
               </div>
             </div>
           )}

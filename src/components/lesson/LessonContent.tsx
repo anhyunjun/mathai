@@ -10,6 +10,7 @@ import {
   Play,
   Pause,
   Download,
+  MessageSquare,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -24,6 +25,12 @@ interface LessonContentProps {
   onNextSlide?: () => void;
   onPrevSlide?: () => void;
   lessonType?: "algebra" | "geometry" | "calculus" | "statistics";
+  chatHistory?: {
+    sender: string;
+    message: string;
+    timestamp: string;
+    isProactive?: boolean;
+  }[];
 }
 
 // Helper function to track cursor position and student focus
@@ -88,6 +95,7 @@ const LessonContent: React.FC<LessonContentProps> = ({
   onNextSlide = () => {},
   onPrevSlide = () => {},
   lessonType = "algebra",
+  chatHistory = [],
 }) => {
   // Track cursor position and focus areas
   const { focusArea, timeOnSection } = useCursorTracking();
@@ -128,6 +136,12 @@ const LessonContent: React.FC<LessonContentProps> = ({
       }
     }
   }, [focusArea, timeOnSection, showContextualHelp]);
+
+  // Filter chat history to only show AI responses that are relevant to questions
+  const questionResponses = chatHistory.filter(
+    (chat) => chat.sender === "AI" && !chat.isProactive,
+  );
+
   // Placeholder content for different tabs
   const lessonContent = (
     <div className="space-y-4">
@@ -276,9 +290,9 @@ const LessonContent: React.FC<LessonContentProps> = ({
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
                 className="text-blue-500"
               >
                 <circle cx="12" cy="12" r="10"></circle>
@@ -336,6 +350,26 @@ const LessonContent: React.FC<LessonContentProps> = ({
 
           <TabsContent value="lesson" className="focus:outline-none">
             {content || lessonContent}
+
+            {/* Question Summary Section */}
+            {questionResponses.length > 0 && (
+              <div className="mt-8 border-t pt-4 border-gray-200">
+                <div className="flex items-center gap-2 mb-3">
+                  <MessageSquare className="h-5 w-5 text-primary" />
+                  <h3 className="text-lg font-semibold">Questions & Answers</h3>
+                </div>
+                <div className="space-y-3">
+                  {questionResponses.map((response, index) => (
+                    <div key={index} className="bg-primary-50 p-3 rounded-md">
+                      <p className="text-sm text-gray-500 mb-1">
+                        {response.timestamp}
+                      </p>
+                      <p className="text-sm">{response.message}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </TabsContent>
 
           <TabsContent value="practice" className="focus:outline-none">

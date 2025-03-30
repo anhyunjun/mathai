@@ -314,4 +314,34 @@
   .animate-bounce-subtle {
     @apply animate-[bounce-subtle_2s_ease-in-out_infinite];
   }
+
+  /* Teacher container with fixed aspect ratio */
+  .teacher-container {
+    aspect-ratio: 3/5;
+    max-height: 500px;
+    width: auto;
+  }
+
+  /* Teacher sidebar with fixed width */
+  .teacher-sidebar {
+    width: 300px;
+    min-width: 300px;
+    max-width: 300px;
+    flex-shrink: 0;
+  }
+
+  /* Ensure the lesson content doesn't overflow under the teacher */
+  @media (max-width: 768px) {
+    .teacher-sidebar {
+      position: fixed;
+      right: 0;
+      bottom: 0;
+      z-index: 50;
+      height: auto;
+      max-height: 80vh;
+      border-top-left-radius: 1rem;
+      border-top-right-radius: 1rem;
+      box-shadow: 0 -4px 6px -1px rgba(0, 0, 0, 0.1);
+    }
+  }
 }
