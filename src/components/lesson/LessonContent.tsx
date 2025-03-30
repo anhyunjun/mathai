@@ -351,25 +351,44 @@ const LessonContent: React.FC<LessonContentProps> = ({
           <TabsContent value="lesson" className="focus:outline-none">
             {content || lessonContent}
 
-            {/* Question Summary Section */}
-            {questionResponses.length > 0 && (
-              <div className="mt-8 border-t pt-4 border-gray-200">
-                <div className="flex items-center gap-2 mb-3">
-                  <MessageSquare className="h-5 w-5 text-primary" />
-                  <h3 className="text-lg font-semibold">Questions & Answers</h3>
-                </div>
-                <div className="space-y-3">
+            {/* Enhanced Question Summary Section */}
+            <div className="mt-8 border-t pt-4 border-gray-200">
+              <div className="flex items-center gap-2 mb-3">
+                <MessageSquare className="h-5 w-5 text-primary" />
+                <h3 className="text-lg font-semibold">Questions & Answers</h3>
+                <span className="ml-auto text-xs bg-primary-100 text-primary-700 px-2 py-0.5 rounded-full">
+                  {questionResponses.length}{" "}
+                  {questionResponses.length === 1 ? "question" : "questions"}
+                </span>
+              </div>
+              {questionResponses.length > 0 ? (
+                <div className="space-y-3 max-h-[300px] overflow-y-auto pr-2">
                   {questionResponses.map((response, index) => (
-                    <div key={index} className="bg-primary-50 p-3 rounded-md">
-                      <p className="text-sm text-gray-500 mb-1">
-                        {response.timestamp}
-                      </p>
+                    <div
+                      key={index}
+                      className="bg-primary-50 p-3 rounded-md border-l-4 border-primary"
+                    >
+                      <div className="flex justify-between items-center mb-1">
+                        <p className="text-sm font-medium text-primary-700">
+                          Question #{index + 1}
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          {response.timestamp}
+                        </p>
+                      </div>
                       <p className="text-sm">{response.message}</p>
                     </div>
                   ))}
                 </div>
-              </div>
-            )}
+              ) : (
+                <div className="bg-gray-50 p-4 rounded-md text-center">
+                  <p className="text-gray-500 text-sm">
+                    No questions asked yet. Use the question interface to ask
+                    your teacher something!
+                  </p>
+                </div>
+              )}
+            </div>
           </TabsContent>
 
           <TabsContent value="practice" className="focus:outline-none">

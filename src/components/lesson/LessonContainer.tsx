@@ -362,7 +362,7 @@ const LessonContainer: React.FC<LessonContainerProps> = ({
     <m.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="w-full h-full bg-background flex flex-col overflow-hidden"
+      className="w-full h-full bg-background flex flex-col overflow-hidden relative"
     >
       {/* Main content area with tabs */}
       <div className="flex-grow flex flex-col overflow-hidden">
@@ -414,7 +414,7 @@ const LessonContainer: React.FC<LessonContainerProps> = ({
 
           <div className="flex-grow overflow-hidden">
             <TabsContent value="lesson" className="h-full flex">
-              <div className="flex-grow overflow-hidden">
+              <div className="flex-grow overflow-hidden relative">
                 <LessonContent
                   title={lessonTitle}
                   description={lessonDescription}
@@ -425,6 +425,25 @@ const LessonContainer: React.FC<LessonContainerProps> = ({
                   lessonType={lessonType}
                   chatHistory={chatHistory}
                 />
+
+                {/* Floating question indicator */}
+                {chatHistory.length > 0 && activeTab !== "chat" && (
+                  <div
+                    className="absolute bottom-4 right-4 bg-primary text-white rounded-full p-2 shadow-lg cursor-pointer hover:bg-primary-600 transition-all"
+                    onClick={() => setActiveTab("chat")}
+                  >
+                    <div className="relative">
+                      <MessageSquare size={24} />
+                      <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                        {
+                          chatHistory.filter(
+                            (msg) => msg.sender === "AI" && !msg.isProactive,
+                          ).length
+                        }
+                      </span>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {!isVideoMinimized && (
@@ -442,9 +461,12 @@ const LessonContainer: React.FC<LessonContainerProps> = ({
                     />
                   </div>
 
-                  {/* Question Interface */}
+                  {/* Enhanced Question Interface */}
                   <div className="p-4 border-t border-primary-100">
-                    <h3 className="text-sm font-medium mb-2">Ask a Question</h3>
+                    <h3 className="text-sm font-medium mb-2 flex items-center">
+                      <MessageSquare size={14} className="mr-1 text-primary" />
+                      Ask a Question
+                    </h3>
                     <div className="flex mb-2">
                       <input
                         type="text"
@@ -456,21 +478,24 @@ const LessonContainer: React.FC<LessonContainerProps> = ({
                           e.key === "Enter" && handleSendMessage()
                         }
                       />
-                      <button
-                        className="bg-primary text-white p-2 rounded-r-md hover:bg-primary-600"
+                      <Button
+                        variant="primary"
+                        size="icon"
+                        className="rounded-l-none rounded-r-md"
                         onClick={handleSendMessage}
                       >
                         <MessageSquare size={16} />
-                      </button>
+                      </Button>
                     </div>
-                    <button
-                      className="w-full flex items-center justify-center gap-2 bg-blue-500 text-white p-2 rounded-md hover:bg-blue-600"
+                    <Button
+                      variant={isListening ? "destructive" : "secondary"}
+                      className="w-full mt-2"
                       onClick={startListening}
                       disabled={isListening}
+                      leftIcon={<Mic size={16} />}
                     >
-                      <Mic size={16} />
                       {isListening ? "Listening..." : "Ask with Voice"}
-                    </button>
+                    </Button>
                   </div>
                 </div>
               )}

@@ -382,7 +382,7 @@ const AITeacherVideo = ({
   // FaceTime-style container classes with fixed dimensions and aspect ratio
   const containerClasses = isMinimized
     ? "fixed bottom-4 right-4 w-[300px] h-[500px] bg-[#111827] rounded-2xl shadow-xl z-50 overflow-hidden transition-all duration-300 ease-in-out hover:scale-105"
-    : "w-[300px] h-[500px] bg-[#111827] rounded-2xl shadow-xl overflow-hidden transition-all duration-300 ease-in-out teacher-container";
+    : "w-[300px] h-[500px] bg-[#111827] rounded-2xl shadow-xl overflow-hidden transition-all duration-300 ease-in-out teacher-container aspect-[3/5] max-h-[500px] flex-shrink-0";
 
   return (
     <div className={containerClasses}>
@@ -415,30 +415,47 @@ const AITeacherVideo = ({
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center bg-[#1F2937]">
-              <div className="w-64 h-64 rounded-full bg-purple-500 relative flex items-center justify-center">
-                {/* Math Teacher Character */}
-                <div className="absolute w-full h-full rounded-full bg-yellow-400 border-4 border-purple-600 overflow-hidden flex items-center justify-center">
-                  {/* Glasses */}
-                  <div className="absolute w-48 h-12 border-4 border-gray-800 rounded-full top-20"></div>
-                  <div className="absolute w-20 h-20 border-4 border-gray-800 rounded-full top-16 left-12"></div>
-                  <div className="absolute w-20 h-20 border-4 border-gray-800 rounded-full top-16 right-12"></div>
+              <div className="w-64 h-64 rounded-full bg-blue-100 relative flex items-center justify-center">
+                {/* Math Teacher Character - Duolingo-style */}
+                <div className="absolute w-full h-full rounded-full bg-green-400 border-4 border-green-600 overflow-hidden flex items-center justify-center">
+                  {/* Face */}
+                  <div className="absolute w-56 h-56 rounded-full bg-green-300 top-4"></div>
+
                   {/* Eyes */}
-                  <div className="absolute w-8 h-8 rounded-full bg-gray-900 top-20 left-16"></div>
-                  <div className="absolute w-8 h-8 rounded-full bg-gray-900 top-20 right-16"></div>
+                  <div className="absolute w-12 h-12 rounded-full bg-white top-16 left-14 flex items-center justify-center">
+                    <div className="w-6 h-6 rounded-full bg-black"></div>
+                  </div>
+                  <div className="absolute w-12 h-12 rounded-full bg-white top-16 right-14 flex items-center justify-center">
+                    <div className="w-6 h-6 rounded-full bg-black"></div>
+                  </div>
+
+                  {/* Eyebrows */}
+                  <div className="absolute w-14 h-3 bg-green-700 rounded-full top-10 left-12 transform -rotate-12"></div>
+                  <div className="absolute w-14 h-3 bg-green-700 rounded-full top-10 right-12 transform rotate-12"></div>
+
                   {/* Smile */}
-                  <div className="absolute w-32 h-16 border-b-4 border-gray-800 rounded-b-full bottom-20 left-1/2 transform -translate-x-1/2"></div>
-                  {/* Math symbols */}
-                  <div className="absolute top-2 left-12 text-2xl font-bold text-purple-700">
+                  <div className="absolute w-24 h-8 border-b-4 border-green-700 rounded-b-full bottom-24 left-1/2 transform -translate-x-1/2"></div>
+
+                  {/* Math accessories */}
+                  <div className="absolute top-0 left-1/2 transform -translate-x-1/2 w-20 h-10 bg-blue-500 rounded-b-lg flex items-center justify-center">
+                    <span className="text-white font-bold">MATH</span>
+                  </div>
+
+                  {/* Math symbols floating around */}
+                  <div className="absolute top-8 left-6 text-xl font-bold text-blue-700 animate-bounce-subtle">
                     +
                   </div>
-                  <div className="absolute top-2 right-12 text-2xl font-bold text-purple-700">
+                  <div className="absolute top-8 right-6 text-xl font-bold text-purple-700 animate-bounce-subtle">
                     ÷
                   </div>
-                  <div className="absolute bottom-10 left-12 text-2xl font-bold text-purple-700">
+                  <div className="absolute bottom-16 left-10 text-xl font-bold text-yellow-500 animate-bounce-subtle">
                     ×
                   </div>
-                  <div className="absolute bottom-10 right-12 text-2xl font-bold text-purple-700">
+                  <div className="absolute bottom-16 right-10 text-xl font-bold text-red-500 animate-bounce-subtle">
                     −
+                  </div>
+                  <div className="absolute bottom-28 left-1/2 transform -translate-x-1/2 text-xl font-bold text-blue-700 animate-bounce-subtle">
+                    =
                   </div>
                 </div>
               </div>

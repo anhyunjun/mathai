@@ -5,23 +5,23 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 font-inter",
+  "inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 font-inter select-none",
   {
     variants: {
       variant: {
         default:
-          "bg-primary text-primary-foreground shadow hover:bg-primary-600 active:bg-primary-700 focus-visible:ring-primary-300",
+          "bg-primary text-primary-foreground shadow hover:bg-primary-600 active:bg-primary-700 focus-visible:ring-primary-300 border border-primary-600",
         destructive:
-          "bg-error text-error-foreground shadow-sm hover:bg-error-600 active:bg-error-700 focus-visible:ring-error-300",
+          "bg-error text-error-foreground shadow-sm hover:bg-error-600 active:bg-error-700 focus-visible:ring-error-300 border border-error-600",
         outline:
           "border border-gray-300 bg-white text-gray-700 shadow-sm hover:bg-gray-50 active:bg-gray-100 focus-visible:ring-primary-300",
         secondary:
-          "bg-secondary text-secondary-foreground shadow-sm hover:bg-secondary-600 active:bg-secondary-700 focus-visible:ring-secondary-300",
+          "bg-secondary text-secondary-foreground shadow-sm hover:bg-secondary-600 active:bg-secondary-700 focus-visible:ring-secondary-300 border border-secondary-600",
         ghost:
           "text-gray-700 hover:bg-gray-100 active:bg-gray-200 focus-visible:ring-gray-300",
         link: "text-primary underline-offset-4 hover:underline focus-visible:ring-primary-300",
         neutral:
-          "bg-gray-100 text-gray-700 hover:bg-gray-200 active:bg-gray-300 focus-visible:ring-gray-300",
+          "bg-gray-100 text-gray-700 hover:bg-gray-200 active:bg-gray-300 focus-visible:ring-gray-300 border border-gray-200",
         plain:
           "bg-white text-gray-700 border border-gray-300 hover:bg-gray-50 active:bg-gray-100 focus-visible:ring-gray-300",
       },
@@ -36,7 +36,8 @@ const buttonVariants = cva(
       state: {
         default: "",
         loading: "opacity-80 cursor-wait",
-        disabled: "opacity-50 cursor-not-allowed",
+        disabled:
+          "opacity-50 cursor-not-allowed bg-gray-100 border-gray-200 text-gray-400",
       },
     },
     defaultVariants: {
