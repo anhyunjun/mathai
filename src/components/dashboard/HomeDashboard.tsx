@@ -194,7 +194,7 @@ const HomeDashboard = ({
             </h2>
             <Button
               variant="ghost"
-              className="text-blue-600 hover:text-blue-800"
+              className="text-purple-600 hover:text-purple-800"
               onClick={() => navigate("/practice")}
             >
               View All Topics <ChevronRight className="h-4 w-4 ml-1" />
@@ -221,13 +221,13 @@ const HomeDashboard = ({
         </div>
 
         {/* Call to Action */}
-        <div className="bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl p-6 text-white mt-8">
+        <div className="bg-gradient-to-r from-purple-500 to-purple-600 rounded-xl p-6 text-white mt-8">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             <div>
               <h2 className="text-2xl font-bold">
                 Ready for your next lesson?
               </h2>
-              <p className="mt-2 text-blue-100">
+              <p className="mt-2 text-purple-100">
                 Schedule a call with your AI math teacher to continue your
                 learning journey.
               </p>
@@ -242,7 +242,7 @@ const HomeDashboard = ({
                 Schedule Call
               </Button>
               <Button
-                className="bg-white text-blue-600 hover:bg-blue-50"
+                className="bg-white text-purple-600 hover:bg-purple-50"
                 onClick={() => navigate("/lesson")}
               >
                 Start Lesson Now

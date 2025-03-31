@@ -1,6 +1,7 @@
 @import url("https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap");
 @import url("https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;700&display=swap");
 @import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Mulish:wght@700&display=swap");
 
 @tailwind base;
 @tailwind components;
@@ -34,19 +35,19 @@
     --primary-800: 263 85% 22%;
     --primary-900: 261 83% 15%;
 
-    /* Secondary - Blue */
-    --secondary: 217 91% 60%;
+    /* Secondary - Purple (was Blue) */
+    --secondary: 265 83% 45%;
     --secondary-foreground: 0 0% 100%;
-    --secondary-50: 214 100% 97%;
-    --secondary-100: 214 95% 93%;
-    --secondary-200: 213 97% 87%;
-    --secondary-300: 212 96% 78%;
-    --secondary-400: 213 94% 68%;
-    --secondary-500: 217 91% 60%;
-    --secondary-600: 221 83% 53%;
-    --secondary-700: 224 76% 48%;
-    --secondary-800: 226 71% 40%;
-    --secondary-900: 224 64% 33%;
+    --secondary-50: 267 100% 98%;
+    --secondary-100: 268 100% 95%;
+    --secondary-200: 268 96% 88%;
+    --secondary-300: 267 94% 78%;
+    --secondary-400: 266 88% 67%;
+    --secondary-500: 265 83% 45%;
+    --secondary-600: 263 70% 40%;
+    --secondary-700: 262 83% 32%;
+    --secondary-800: 263 85% 22%;
+    --secondary-900: 261 83% 15%;
 
     /* Success - Green */
     --success: 142 72% 29%;
@@ -152,19 +153,19 @@
     --primary-800: 268 100% 95%;
     --primary-900: 267 100% 98%;
 
-    /* Secondary - Blue */
-    --secondary: 212 96% 78%;
-    --secondary-foreground: 226 71% 40%;
-    --secondary-50: 224 64% 33%;
-    --secondary-100: 226 71% 40%;
-    --secondary-200: 224 76% 48%;
-    --secondary-300: 221 83% 53%;
-    --secondary-400: 217 91% 60%;
-    --secondary-500: 213 94% 68%;
-    --secondary-600: 212 96% 78%;
-    --secondary-700: 213 97% 87%;
-    --secondary-800: 214 95% 93%;
-    --secondary-900: 214 100% 97%;
+    /* Secondary - Purple (was Blue) */
+    --secondary: 267 94% 78%;
+    --secondary-foreground: 262 83% 32%;
+    --secondary-50: 261 83% 15%;
+    --secondary-100: 263 85% 22%;
+    --secondary-200: 262 83% 32%;
+    --secondary-300: 263 70% 40%;
+    --secondary-400: 265 83% 45%;
+    --secondary-500: 266 88% 67%;
+    --secondary-600: 267 94% 78%;
+    --secondary-700: 268 96% 88%;
+    --secondary-800: 268 100% 95%;
+    --secondary-900: 267 100% 98%;
 
     /* Success - Green */
     --success: 142 77% 73%;
@@ -362,6 +363,18 @@
     z-index: 10;
     overflow: hidden;
     padding: 16px;
+  }
+
+  /* Ensure icons are fully visible with proper spacing */
+  .teacher-video-controls {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 12px;
+    margin-top: 12px;
+    padding: 8px;
+    width: 100%;
+    overflow: visible;
   }
 
   /* Responsive adjustments for different screen sizes */

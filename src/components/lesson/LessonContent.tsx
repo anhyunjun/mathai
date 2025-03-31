@@ -236,7 +236,7 @@ const LessonContent: React.FC<LessonContentProps> = ({
             For any quadratic equation in the form ax² + bx + c = 0, the
             solutions can be found using:
           </p>
-          <div className="bg-blue-50 dark:bg-blue-900/30 p-4 rounded-lg my-4 text-center">
+          <div className="bg-purple-50 dark:bg-purple-900/30 p-4 rounded-lg my-4 text-center">
             <span className="text-xl font-medium">
               x = (-b ± √(b² - 4ac)) / 2a
             </span>
@@ -277,7 +277,7 @@ const LessonContent: React.FC<LessonContentProps> = ({
             rewrite ax² + bx + c = 0 as (px + q)(rx + s) = 0, then we can use
             the zero product property.
           </p>
-          <div className="bg-blue-50 dark:bg-blue-900/30 p-4 rounded-lg my-4">
+          <div className="bg-purple-50 dark:bg-purple-900/30 p-4 rounded-lg my-4">
             <p className="font-medium">Zero Product Property:</p>
             <p className="mt-1">
               If a × b = 0, then either a = 0 or b = 0 (or both).
@@ -319,7 +319,7 @@ const LessonContent: React.FC<LessonContentProps> = ({
             Completing the square is a technique that transforms a quadratic
             equation into the form (x + p)² = q, which is easier to solve.
           </p>
-          <div className="bg-blue-50 dark:bg-blue-900/30 p-4 rounded-lg my-4">
+          <div className="bg-purple-50 dark:bg-purple-900/30 p-4 rounded-lg my-4">
             <p className="font-medium">Steps for Completing the Square:</p>
             <ol className="list-decimal list-inside mt-1 space-y-1">
               <li>Rearrange the equation to standard form: ax² + bx + c = 0</li>
@@ -368,7 +368,7 @@ const LessonContent: React.FC<LessonContentProps> = ({
               <CardTitle className="text-md">Practice Question</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="p-4 bg-blue-50 rounded-md border border-blue-200 mb-6">
+              <div className="p-4 bg-purple-50 rounded-md border border-purple-200 mb-6">
                 <p className="text-lg font-medium">
                   {currentQuestion.question}
                 </p>
@@ -573,7 +573,7 @@ const LessonContent: React.FC<LessonContentProps> = ({
             )
           }
         >
-          <FileText className="h-5 w-5 mr-3 text-blue-500" />
+          <FileText className="h-5 w-5 mr-3 text-purple-500" />
           <div>
             <h4 className="font-medium">Quadratic Equations Cheat Sheet</h4>
             <p className="text-sm text-gray-500 dark:text-gray-400">
@@ -634,7 +634,7 @@ const LessonContent: React.FC<LessonContentProps> = ({
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -20 }}
-          className="absolute top-20 right-4 bg-blue-50 border-l-4 border-blue-500 p-3 rounded-md shadow-md max-w-xs z-10"
+          className="absolute top-20 right-4 bg-purple-50 border-l-4 border-purple-500 p-3 rounded-md shadow-md max-w-xs z-10"
         >
           <div className="flex items-start">
             <div className="flex-shrink-0 mr-2">
@@ -648,7 +648,7 @@ const LessonContent: React.FC<LessonContentProps> = ({
                 strokeWidth="2"
                 strokeLinecap="round"
                 strokeLinejoin="round"
-                className="text-blue-500"
+                className="text-purple-500"
               >
                 <circle cx="12" cy="12" r="10"></circle>
                 <path d="M12 16v-4"></path>
@@ -656,17 +656,17 @@ const LessonContent: React.FC<LessonContentProps> = ({
               </svg>
             </div>
             <div>
-              <p className="text-sm text-blue-800">{contextualHelpText}</p>
+              <p className="text-sm text-purple-800">{contextualHelpText}</p>
             </div>
           </div>
         </motion.div>
       )}
       {/* Header with title and navigation */}
-      <div className="bg-blue-600 dark:bg-blue-700 p-4 text-white">
+      <div className="bg-purple-600 dark:bg-purple-700 p-4 text-white">
         <div className="flex justify-between items-center">
           <div>
             <h2 className="text-2xl font-bold">{title}</h2>
-            <p className="text-blue-100 mt-1">{description}</p>
+            <p className="text-purple-100 mt-1">{description}</p>
           </div>
           <div className="flex items-center space-x-2">
             <Button
@@ -777,17 +777,7 @@ const LessonContent: React.FC<LessonContentProps> = ({
         </div>
       </div>
 
-      {/* Footer with controls - simplified */}
-      <div className="border-t border-gray-200 dark:border-gray-700 p-3 flex justify-end items-center bg-gray-50 dark:bg-gray-800">
-        <Button
-          variant="primary"
-          size="sm"
-          onClick={onNextSlide}
-          disabled={currentSlide >= totalSlides}
-        >
-          Continue Learning
-        </Button>
-      </div>
+      {/* Footer with controls removed */}
     </div>
   );
 };

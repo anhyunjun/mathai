@@ -6,18 +6,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import {
-  Mic,
-  MicOff,
-  Video,
-  VideoOff,
-  Maximize2,
-  Minimize2,
-  Volume2,
-  VolumeX,
-  AlertCircle,
-  MessageSquare,
-} from "lucide-react";
+import { Maximize2, Minimize2, AlertCircle, MessageSquare } from "lucide-react";
 import { callGptApi, type ChatMessage } from "@/lib/utils";
 
 interface AITeacherVideoProps {
@@ -60,7 +49,6 @@ const AITeacherVideo = ({
 }: AITeacherVideoProps) => {
   const [localMuted, setLocalMuted] = useState(isMuted);
   const [videoEnabled, setVideoEnabled] = useState(true);
-  const [micEnabled, setMicEnabled] = useState(true);
   const [isListening, setIsListening] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -146,23 +134,6 @@ const AITeacherVideo = ({
       }
     };
   }, [enableVoiceInput]);
-
-  // Function to start listening for speech
-  const startListening = () => {
-    if (speechRecognitionRef.current && !isListening) {
-      setTranscript("");
-      setIsListening(true);
-      speechRecognitionRef.current.start();
-    }
-  };
-
-  // Function to stop listening for speech
-  const stopListening = () => {
-    if (speechRecognitionRef.current && isListening) {
-      speechRecognitionRef.current.stop();
-      setIsListening(false);
-    }
-  };
 
   // Function to speak text using speech synthesis
   const speakText = (text: string) => {
@@ -377,7 +348,7 @@ const AITeacherVideo = ({
         videoRef.current.srcObject = canvas.captureStream(30);
       }
     }
-  }, [videoSrc]);
+  }, [videoSrc, isSpeaking]);
 
   // FaceTime-style container classes with responsive dimensions and fixed aspect ratio
   const containerClasses = isMinimized
@@ -491,61 +462,25 @@ const AITeacherVideo = ({
           )}
         </div>
 
-        {/* Bottom control bar */}
-        <div className="bg-[#111827] p-4 flex justify-center space-x-4">
+        {/* Bottom control bar with improved spacing */}
+        <div className="bg-[#111827] p-4 flex justify-center items-center gap-4 overflow-visible">
           <Button
             variant="ghost"
             size="icon"
-            className={`rounded-full h-12 w-12 ${isListening ? "bg-red-600 text-white animate-pulse" : micEnabled ? "bg-blue-600 text-white" : "bg-gray-700 text-white"}`}
-            onClick={() => {
-              if (enableVoiceInput) {
-                if (isListening) {
-                  stopListening();
-                } else if (micEnabled) {
-                  startListening();
-                } else {
-                  setMicEnabled(true);
-                }
-              } else {
-                setMicEnabled(!micEnabled);
-              }
-            }}
-          >
-            {isListening ? (
-              <Mic size={20} />
-            ) : micEnabled ? (
-              <Mic size={20} />
-            ) : (
-              <MicOff size={20} />
-            )}
-          </Button>
-
-          <Button
-            variant="ghost"
-            size="icon"
-            className={`rounded-full h-12 w-12 ${videoEnabled ? "bg-blue-600 text-white" : "bg-gray-700 text-white"}`}
-            onClick={() => setVideoEnabled(!videoEnabled)}
-          >
-            {videoEnabled ? <Video size={20} /> : <VideoOff size={20} />}
-          </Button>
-
-          <Button
-            variant="ghost"
-            size="icon"
-            className={`rounded-full h-12 w-12 ${isSpeaking ? "bg-green-600 text-white animate-pulse" : "bg-green-600 text-white hover:bg-green-700"}`}
+            className={`rounded-full h-10 w-10 ${isSpeaking ? "bg-green-600 text-white animate-pulse" : "bg-green-600 text-white hover:bg-green-700"}`}
             onClick={() => handleSendMessage()}
             disabled={isLoading || isListening}
           >
-            <MessageSquare size={20} />
+            <MessageSquare size={18} />
           </Button>
 
           <Button
             variant="ghost"
             size="icon"
-            className="rounded-full h-12 w-12 bg-red-600 text-white hover:bg-red-700"
+            className="rounded-full h-10 w-10 bg-red-600 text-white hover:bg-red-700"
             onClick={onToggleMinimize}
           >
-            {isMinimized ? <Maximize2 size={20} /> : <Minimize2 size={20} />}
+            {isMinimized ? <Maximize2 size={18} /> : <Minimize2 size={18} />}
           </Button>
         </div>
 

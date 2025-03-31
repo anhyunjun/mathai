@@ -5,10 +5,7 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-export interface ChatMessage {
-  role: "system" | "user" | "assistant";
-  content: string;
-}
+import { ChatMessage } from "./types";
 
 export async function callGptApi(
   messages: ChatMessage[],

@@ -17,8 +17,8 @@ import {
   PhoneOff,
   Settings,
   HelpCircle,
-  MessageSquare,
   PenTool,
+  RotateCcw,
 } from "lucide-react";
 
 interface LessonControlsProps {
@@ -33,8 +33,9 @@ interface LessonControlsProps {
   onFullscreenToggle?: () => void;
   onOpenSettings?: () => void;
   onOpenHelp?: () => void;
-  onOpenChat?: () => void;
   onOpenDrawingTools?: () => void;
+  isDrawingMode?: boolean;
+  onReplayAudio?: () => void;
 }
 
 const LessonControls = ({
@@ -49,8 +50,9 @@ const LessonControls = ({
   onFullscreenToggle = () => {},
   onOpenSettings = () => {},
   onOpenHelp = () => {},
-  onOpenChat = () => {},
   onOpenDrawingTools = () => {},
+  isDrawingMode = false,
+  onReplayAudio = () => {},
 }: LessonControlsProps) => {
   const [localVolume, setLocalVolume] = useState<number>(volume);
 
@@ -69,7 +71,9 @@ const LessonControls = ({
                 variant="ghost"
                 size="icon"
                 onClick={onPlayPause}
-                aria-label={isPlaying ? "Pause lesson" : "Play lesson"}
+                aria-label={
+                  isPlaying ? "Pause teacher's speech" : "Play teacher's speech"
+                }
               >
                 {isPlaying ? (
                   <Pause className="h-5 w-5" />
@@ -79,7 +83,29 @@ const LessonControls = ({
               </Button>
             </TooltipTrigger>
             <TooltipContent>
-              <p>{isPlaying ? "Pause lesson" : "Resume lesson"}</p>
+              <p>
+                {isPlaying
+                  ? "Pause teacher's speech"
+                  : "Resume teacher's speech"}
+              </p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={onReplayAudio}
+                aria-label="Replay last segment"
+              >
+                <RotateCcw className="h-5 w-5" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Replay last segment</p>
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
@@ -119,39 +145,22 @@ const LessonControls = ({
         </div>
       </div>
 
-      <div className="flex items-center space-x-2">
+      <div className="flex items-center space-x-4">
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
-                variant="ghost"
+                variant={isDrawingMode ? "secondary" : "ghost"}
                 size="icon"
                 onClick={onOpenDrawingTools}
                 aria-label="Drawing tools"
+                className="mr-2"
               >
                 <PenTool className="h-5 w-5" />
               </Button>
             </TooltipTrigger>
             <TooltipContent>
               <p>Drawing tools</p>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
-
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={onOpenChat}
-                aria-label="Chat with teacher"
-              >
-                <MessageSquare className="h-5 w-5" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>Chat with teacher</p>
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
@@ -170,24 +179,6 @@ const LessonControls = ({
             </TooltipTrigger>
             <TooltipContent>
               <p>Help</p>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
-
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={onOpenSettings}
-                aria-label="Settings"
-              >
-                <Settings className="h-5 w-5" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>Settings</p>
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>

@@ -134,6 +134,7 @@ module.exports = {
         mono: ["IBM Plex Mono", "monospace"],
         pretendard: ["Pretendard", "sans-serif"],
         inter: ["Inter", "sans-serif"],
+        mulish: ["Mulish", "sans-serif"],
       },
       fontSize: {
         xs: ["0.75rem", { lineHeight: "1rem" }],

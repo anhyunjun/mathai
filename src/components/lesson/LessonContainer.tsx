@@ -15,7 +15,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { BookOpen, Award, X, Mic } from "lucide-react";
+import { BookOpen, Award, X, PenTool, Eraser } from "lucide-react";
 
 interface LessonContainerProps {
   teacherName?: string;
@@ -38,7 +38,7 @@ const LessonContainer: React.FC<LessonContainerProps> = ({
   totalSlides = 10,
   isPracticeMode = false,
 }) => {
-  // Add CSS for teacher sidebar container
+  // Add CSS for teacher sidebar container and video controls
   React.useEffect(() => {
     const style = document.createElement("style");
     style.innerHTML = `
@@ -81,6 +81,16 @@ const LessonContainer: React.FC<LessonContainerProps> = ({
   const [volume, setVolume] = useState(75);
   const [isMuted, setIsMuted] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isDrawingMode, setIsDrawingMode] = useState(false);
+  const [lastAudioSegment, setLastAudioSegment] = useState("");
+  const [currentAudioText, setCurrentAudioText] = useState("");
+  const [drawingColor, setDrawingColor] = useState("#000000");
+  const [isEraser, setIsEraser] = useState(false);
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const contextRef = useRef<CanvasRenderingContext2D | null>(null);
+  const [isDrawing, setIsDrawing] = useState(false);
+  const [lastX, setLastX] = useState(0);
+  const [lastY, setLastY] = useState(0);
   const [showEndLessonDialog, setShowEndLessonDialog] = useState(false);
   const [currentLessonSlide, setCurrentLessonSlide] = useState(currentSlide);
   const [chatMessage, setChatMessage] = useState("");
@@ -225,6 +235,118 @@ const LessonContainer: React.FC<LessonContainerProps> = ({
     };
   }, []);
 
+  // Initialize canvas for drawing
+  useEffect(() => {
+    if (isDrawingMode && canvasRef.current) {
+      const canvas = canvasRef.current;
+      const context = canvas.current?.getContext("2d");
+
+      if (context) {
+        // Set canvas to be the size of its parent container
+        const resizeCanvas = () => {
+          const parent = canvas.parentElement;
+          if (parent) {
+            canvas.width = parent.clientWidth;
+            canvas.height = parent.clientHeight;
+            context.lineCap = "round";
+            context.lineJoin = "round";
+            context.lineWidth = 5;
+            context.strokeStyle = drawingColor;
+          }
+        };
+
+        resizeCanvas();
+        window.addEventListener("resize", resizeCanvas);
+
+        contextRef.current = context;
+
+        return () => {
+          window.removeEventListener("resize", resizeCanvas);
+        };
+      }
+    }
+  }, [isDrawingMode, drawingColor]);
+
+  const startDrawing = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    if (!isDrawingMode || !contextRef.current) return;
+
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const rect = canvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+
+    contextRef.current.beginPath();
+    contextRef.current.moveTo(x, y);
+    setIsDrawing(true);
+    setLastX(x);
+    setLastY(y);
+  };
+
+  const draw = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    if (!isDrawing || !isDrawingMode || !contextRef.current) return;
+
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const rect = canvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+
+    contextRef.current.lineTo(x, y);
+    contextRef.current.stroke();
+    setLastX(x);
+    setLastY(y);
+  };
+
+  const stopDrawing = () => {
+    if (!isDrawingMode || !contextRef.current) return;
+
+    contextRef.current.closePath();
+    setIsDrawing(false);
+  };
+
+  const clearCanvas = () => {
+    if (!canvasRef.current || !contextRef.current) return;
+
+    const canvas = canvasRef.current;
+    contextRef.current.clearRect(0, 0, canvas.width, canvas.height);
+  };
+
+  const toggleEraser = () => {
+    if (!contextRef.current) return;
+
+    setIsEraser(!isEraser);
+    if (!isEraser) {
+      contextRef.current.globalCompositeOperation = "destination-out";
+    } else {
+      contextRef.current.globalCompositeOperation = "source-over";
+      contextRef.current.strokeStyle = drawingColor;
+    }
+  };
+
+  const handleColorChange = (color: string) => {
+    setDrawingColor(color);
+    if (contextRef.current) {
+      contextRef.current.strokeStyle = color;
+      setIsEraser(false);
+      contextRef.current.globalCompositeOperation = "source-over";
+    }
+  };
+
+  const toggleDrawingMode = () => {
+    setIsDrawingMode(!isDrawingMode);
+    if (!isDrawingMode) {
+      // Reset drawing state when enabling drawing mode
+      setIsEraser(false);
+      if (contextRef.current) {
+        contextRef.current.globalCompositeOperation = "source-over";
+        contextRef.current.strokeStyle = drawingColor;
+      }
+    }
+  };
+
   // Update current slide when it changes from parent
   useEffect(() => {
     setCurrentLessonSlide(currentSlide);
@@ -333,6 +455,56 @@ const LessonContainer: React.FC<LessonContainerProps> = ({
 
   const handlePlayPause = () => {
     setIsPlaying(!isPlaying);
+    // Store the current segment when pausing
+    if (isPlaying) {
+      // Store the current text being spoken
+      if (currentAudioText) {
+        setLastAudioSegment(currentAudioText);
+      } else {
+        setLastAudioSegment("Current explanation segment");
+      }
+
+      // Pause speech synthesis
+      if ("speechSynthesis" in window) {
+        window.speechSynthesis.pause();
+      }
+    } else {
+      // Resume speech synthesis
+      if ("speechSynthesis" in window) {
+        window.speechSynthesis.resume();
+      }
+    }
+  };
+
+  const handleReplayAudio = () => {
+    // Logic to replay the last audio segment
+    console.log("Replaying last segment:", lastAudioSegment);
+
+    // If we have a stored audio segment, replay it
+    if (lastAudioSegment && "speechSynthesis" in window) {
+      // Cancel any ongoing speech
+      window.speechSynthesis.cancel();
+
+      // Create a new utterance with the last segment
+      const utterance = new SpeechSynthesisUtterance(lastAudioSegment);
+
+      // Try to find a female voice
+      const voices = window.speechSynthesis.getVoices();
+      const femaleVoice = voices.find(
+        (voice) =>
+          voice.name.includes("female") ||
+          voice.name.includes("woman") ||
+          voice.name.includes("girl"),
+      );
+
+      if (femaleVoice) {
+        utterance.voice = femaleVoice;
+      }
+
+      // Speak the text
+      window.speechSynthesis.speak(utterance);
+      setIsPlaying(true);
+    }
   };
 
   const handleNextSlide = () => {
@@ -571,6 +743,49 @@ const LessonContainer: React.FC<LessonContainerProps> = ({
               chatHistory={chatHistory}
               isPracticeMode={isPracticeMode}
             />
+
+            {isDrawingMode && (
+              <div className="absolute inset-0 z-20 pointer-events-auto">
+                <div className="absolute top-4 right-4 z-30 flex gap-2 bg-white p-2 rounded-md shadow-md">
+                  <Button
+                    variant={isEraser ? "default" : "outline"}
+                    size="icon"
+                    onClick={toggleEraser}
+                    className="h-8 w-8"
+                  >
+                    <Eraser className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={clearCanvas}
+                    className="h-8 w-8"
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                  <div className="flex gap-1">
+                    {["#000000", "#FF0000", "#0000FF", "#00FF00"].map(
+                      (color) => (
+                        <button
+                          key={color}
+                          className={`h-8 w-8 rounded-full border ${drawingColor === color ? "ring-2 ring-primary" : ""}`}
+                          style={{ backgroundColor: color }}
+                          onClick={() => handleColorChange(color)}
+                        />
+                      ),
+                    )}
+                  </div>
+                </div>
+                <canvas
+                  ref={canvasRef}
+                  className="w-full h-full cursor-crosshair"
+                  onMouseDown={startDrawing}
+                  onMouseMove={draw}
+                  onMouseUp={stopDrawing}
+                  onMouseLeave={stopDrawing}
+                />
+              </div>
+            )}
           </div>
 
           {!isVideoMinimized && (
@@ -585,6 +800,11 @@ const LessonContainer: React.FC<LessonContainerProps> = ({
                   observationStatus={teacherObservationStatus}
                   studentActivity={studentActivity}
                   timeSpentOnProblem={timeSpentOnCurrentProblem}
+                  onMessage={(message) => {
+                    // Store the current message for replay functionality
+                    setCurrentAudioText(message);
+                    setLastAudioSegment(message);
+                  }}
                 />
               </div>
 
@@ -612,15 +832,7 @@ const LessonContainer: React.FC<LessonContainerProps> = ({
                     <BookOpen size={16} />
                   </Button>
                 </div>
-                <Button
-                  variant={isListening ? "destructive" : "secondary"}
-                  className="w-full mt-2"
-                  onClick={startListening}
-                  disabled={isListening}
-                >
-                  <Mic size={16} className="mr-2" />
-                  {isListening ? "Listening..." : "Ask with Voice"}
-                </Button>
+                {/* Voice input button removed as requested */}
               </div>
             </div>
           )}
@@ -639,6 +851,9 @@ const LessonContainer: React.FC<LessonContainerProps> = ({
           isFullscreen={isFullscreen}
           onFullscreenToggle={toggleFullscreen}
           onEndLesson={handleEndLesson}
+          onOpenDrawingTools={toggleDrawingMode}
+          isDrawingMode={isDrawingMode}
+          onReplayAudio={handleReplayAudio}
         />
       </div>
 
